@@ -1,0 +1,19 @@
+# NewPOS GitIgnore
+
+# Dependencies
+node_modules/
+api/vendor/
+app/node_modules/
+app/dist/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Local Config
+.env
+api/src/Config/Database.local.php

@@ -1,0 +1,16 @@
+{
+    "name": "newpos/api",
+    "description": "Backend API for POS System",
+    "type": "project",
+    "require": {
+        "php": ">=8.0",
+        "firebase/php-jwt": "^6.0",
+        "slim/slim": "4.*",
+        "slim/psr7": "^1.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    }
+}
