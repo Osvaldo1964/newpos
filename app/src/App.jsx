@@ -10,10 +10,23 @@ import {
   ShoppingBag,
   TrendingDown,
   LayoutDashboard,
-  Calculator
+  Calculator,
+  Tag,
+  Shield,
+  Users as UsersIcon,
+  Monitor
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import './index.css'
+import Items from './components/inventory/Items'
+import Categories from './components/inventory/Categories'
+import Warehouses from './components/inventory/Warehouses'
+import Sedes from './components/config/Sedes'
+import Users from './components/config/Users'
+import Permissions from './components/config/Permissions'
+import CashRegisters from './components/config/CashRegisters'
+import CashManager from './components/cash/CashManager'
+import CashAudit from './components/cash/CashAudit'
 
 const modules = [
   {
@@ -23,6 +36,7 @@ const modules = [
     icon: <Package size={32} />,
     color: '#10B981',
     submodules: [
+      { id: 'categorias', title: 'Categorías', icon: <Tag size={20} /> },
       { id: 'items', title: 'Items', icon: <ShoppingBag size={20} /> },
       { id: 'bodegas', title: 'Bodegas', icon: <Package size={20} /> },
       { id: 'traslados', title: 'Traslados', icon: <ArrowRightLeft size={20} /> },
@@ -48,7 +62,8 @@ const modules = [
     color: '#064E3B',
     submodules: [
       { id: 'apertura', title: 'Apertura/Cierre', icon: <Banknote size={20} /> },
-      { id: 'gastos', title: 'Gastos', icon: <TrendingDown size={20} /> }
+      { id: 'gastos', title: 'Gastos', icon: <TrendingDown size={20} /> },
+      { id: 'cajas_master', title: 'Gestión de Cajas', icon: <Monitor size={20} /> }
     ]
   },
   {
@@ -80,7 +95,8 @@ const modules = [
     icon: <Settings size={32} />,
     color: '#1E3A8A',
     submodules: [
-      { id: 'usuarios', title: 'Usuarios', icon: <Settings size={20} /> },
+      { id: 'usuarios', title: 'Usuarios', icon: <UsersIcon size={20} /> },
+      { id: 'permisos', title: 'Permisos', icon: <Shield size={20} /> },
       { id: 'sedes', title: 'Sedes', icon: <LayoutDashboard size={20} /> }
     ]
   }
@@ -94,12 +110,23 @@ function App() {
     return savedUser ? JSON.parse(savedUser) : null
   })
   const [activeModule, setActiveModule] = useState(null)
+  const [activeSubmodule, setActiveSubmodule] = useState(null)
 
   const handleLogout = () => {
     localStorage.removeItem('pos_token')
     localStorage.removeItem('pos_user')
     setUser(null)
     setActiveModule(null)
+    setActiveSubmodule(null)
+  }
+
+  const handleBackToDashboard = () => {
+    setActiveModule(null)
+    setActiveSubmodule(null)
+  }
+
+  const handleBackToModule = () => {
+    setActiveSubmodule(null)
   }
 
   if (!user) {
@@ -119,6 +146,49 @@ function App() {
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
     show: { y: 0, opacity: 1 }
+  }
+
+  // Render Submodule Content
+  const renderSubmodule = () => {
+    switch (activeSubmodule) {
+      case 'categorias':
+        return <Categories />
+      case 'items':
+        return <Items />
+      case 'bodegas':
+        return <Warehouses />
+      case 'sedes':
+        return <Sedes />
+      case 'usuarios':
+        return <Users />
+      case 'permisos':
+        return <Permissions />
+      case 'cajas_master':
+        return <CashRegisters />
+      case 'apertura':
+        return <CashManager />
+      case 'gastos':
+        return <CashAudit />
+      default:
+        return (
+          <div className="cards-grid">
+            {activeModule.submodules.map((sm) => (
+              <motion.div
+                key={sm.id}
+                whileHover={{ y: -5 }}
+                className="module-card glass"
+                style={{ borderLeft: `4px solid ${activeModule.color}` }}
+                onClick={() => setActiveSubmodule(sm.id)}
+              >
+                <div className="icon-wrapper" style={{ backgroundColor: `${activeModule.color}15`, color: activeModule.color }}>
+                  {sm.icon}
+                </div>
+                <h3>{sm.title}</h3>
+              </motion.div>
+            ))}
+          </div>
+        )
+    }
   }
 
   return (
@@ -146,14 +216,14 @@ function App() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          {activeModule ? activeModule.title : 'Sistema POS Antigravity'}
+          {activeSubmodule ? activeModule.submodules.find(sm => sm.id === activeSubmodule)?.title : activeModule ? activeModule.title : 'Sistema POS Antigravity'}
         </motion.h1>
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          {activeModule ? activeModule.description : 'Selecciona un módulo para comenzar'}
+          {activeModule ? (activeSubmodule ? `Gestión de ${activeSubmodule}` : activeModule.description) : 'Selecciona un módulo para comenzar'}
         </motion.p>
       </header>
 
@@ -185,42 +255,29 @@ function App() {
           </motion.div>
         ) : (
           <motion.div
-            key="submodule-grid"
+            key="active-module-view"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
           >
-            <button
-              onClick={() => setActiveModule(null)}
-              style={{
-                marginBottom: '1.5rem',
-                background: 'none',
-                border: 'none',
-                color: 'var(--primary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontWeight: 600
-              }}
-            >
-              ← Volver al Dashboard
-            </button>
-            <div className="cards-grid">
-              {activeModule.submodules.map((sm) => (
-                <motion.div
-                  key={sm.id}
-                  whileHover={{ y: -5 }}
-                  className="module-card glass"
-                  style={{ borderLeft: `4px solid ${activeModule.color}` }}
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+              <button
+                onClick={handleBackToDashboard}
+                className="btn btn-ghost"
+              >
+                ← Dashboard
+              </button>
+              {activeSubmodule && (
+                <button
+                  onClick={handleBackToModule}
+                  className="btn btn-ghost"
                 >
-                  <div className="icon-wrapper" style={{ backgroundColor: `${activeModule.color}15`, color: activeModule.color }}>
-                    {sm.icon}
-                  </div>
-                  <h3>{sm.title}</h3>
-                </motion.div>
-              ))}
+                  ← Volver a {activeModule.title}
+                </button>
+              )}
             </div>
+
+            {renderSubmodule()}
           </motion.div>
         )}
       </AnimatePresence>

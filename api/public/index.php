@@ -4,6 +4,14 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
 use App\Config\Database;
 use App\Controllers\AuthController;
+use App\Controllers\InventoryController;
+use App\Controllers\CategoryController;
+use App\Controllers\ConfigController;
+use App\Controllers\UserController;
+use App\Controllers\RoleController;
+use App\Controllers\CashRegisterController;
+use App\Controllers\CashController;
+use App\Middleware\JwtMiddleware;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -83,9 +91,94 @@ $app->post('/login', function (Request $request, Response $response) {
     return $controller->login($request, $response);
 });
 
+// --- Inventory Routes ---
+$app->group('/inventory', function ($group) {
+    $db = (new Database())->getConnection();
+    $controller = new InventoryController($db);
+
+    $group->get('/products', [$controller, 'getProducts']);
+    $group->post('/products', [$controller, 'createProduct']);
+    $group->put('/products/{id}', [$controller, 'updateProduct']);
+    $group->delete('/products/{id}', [$controller, 'deleteProduct']);
+
+    $group->get('/categories', [$controller, 'getCategories']);
+    $group->get('/warehouses', [$controller, 'getWarehouses']);
+    $group->post('/warehouses', [$controller, 'createWarehouse']);
+    $group->put('/warehouses/{id}', [$controller, 'updateWarehouse']);
+    $group->delete('/warehouses/{id}', [$controller, 'deleteWarehouse']);
+    $group->get('/sedes', [$controller, 'getSedes']);
+})->add(new JwtMiddleware());
+
+// --- Categories CRUD ---
+$app->group('/categories', function ($group) {
+    $db = (new Database())->getConnection();
+    $controller = new CategoryController($db);
+
+    $group->get('', [$controller, 'getCategories']);
+    $group->post('', [$controller, 'createCategory']);
+    $group->put('/{id}', [$controller, 'updateCategory']);
+    $group->delete('/{id}', [$controller, 'deleteCategory']);
+})->add(new JwtMiddleware());
+
 // Wildcard for preflight if not handled by standard header()
 $app->options('/{routes:.+}', function ($request, $response, $args) {
     return $response;
 });
+
+// --- Sedes CRUD ---
+$app->group('/sedes', function ($group) {
+    $db = (new Database())->getConnection();
+    $controller = new ConfigController($db);
+
+    $group->get('', [$controller, 'getSedes']);
+    $group->post('', [$controller, 'createSede']);
+    $group->put('/{id}', [$controller, 'updateSede']);
+    $group->delete('/{id}', [$controller, 'deleteSede']);
+})->add(new JwtMiddleware());
+
+// --- Users Management ---
+$app->group('/users', function ($group) {
+    $db = (new Database())->getConnection();
+    $controller = new UserController($db);
+    $group->get('', [$controller, 'getUsers']);
+    $group->post('', [$controller, 'createUser']);
+    $group->put('/{id}', [$controller, 'updateUser']);
+    $group->delete('/{id}', [$controller, 'deleteUser']);
+})->add(new JwtMiddleware());
+
+// --- Roles & Permissions ---
+$app->group('/roles', function ($group) {
+    $db = (new Database())->getConnection();
+    $controller = new RoleController($db);
+    $group->get('', [$controller, 'getRoles']);
+    $group->get('/modules', [$controller, 'getModules']);
+    $group->get('/permissions', [$controller, 'getPermissions']);
+    $group->get('/{id}/permissions', [$controller, 'getRolePermissions']);
+    $group->put('/{id}/permissions', [$controller, 'updateRolePermissions']);
+})->add(new JwtMiddleware());
+
+// --- Cash Registers Management ---
+$app->group('/cash-registers', function ($group) {
+    $db = (new Database())->getConnection();
+    $controller = new CashRegisterController($db);
+    $group->get('', [$controller, 'getRegisters']);
+    $group->get('/status', [$controller, 'getRegistersWithStatus']);
+    $group->post('', [$controller, 'createRegister']);
+    $group->put('/{id}', [$controller, 'updateRegister']);
+    $group->delete('/{id}', [$controller, 'deleteRegister']);
+    $group->get('/sede/{sede_id}', [$controller, 'getRegistersBySede']);
+})->add(new JwtMiddleware());
+
+// --- Cash Sessions & Movements ---
+$app->group('/cash', function ($group) {
+    $db = (new Database())->getConnection();
+    $controller = new CashController($db);
+    $group->get('/active', [$controller, 'checkActiveSession']);
+    $group->post('/open', [$controller, 'openSession']);
+    $group->put('/close/{id}', [$controller, 'closeSession']);
+    $group->get('/session/{id}', [$controller, 'getSessionDetails']);
+    $group->post('/movements', [$controller, 'addMovement']);
+    $group->get('/audit', [$controller, 'getAuditLogs']);
+})->add(new JwtMiddleware());
 
 $app->run();
