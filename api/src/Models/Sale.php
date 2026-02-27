@@ -19,13 +19,13 @@ class Sale
             $this->db->beginTransaction();
 
             // 1. Insertar Cabecera de Venta
-            $sql = "INSERT INTO sales (user_id, customer_id, sede_id, tipo, subtotal, iva_total, total, estado) 
+            $sql = "INSERT INTO sales (user_id, tercero_id, sede_id, tipo, subtotal, iva_total, total, estado) 
                     VALUES (?, ?, ?, 'POS', ?, ?, ?, 'PAGADA')";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 $data['user_id'],
                 $data['customer_id'] ?? null,
-                $data['sede_id'],
+                $data['sede_id'] ?? null,
                 $data['subtotal'],
                 $data['iva_total'],
                 $data['total']
@@ -35,15 +35,14 @@ class Sale
             // 2. Insertar Detalle e Inventario
             foreach ($data['items'] as $item) {
                 // Registrar detalle
-                $sqlItem = "INSERT INTO sale_items (sale_id, product_id, cantidad, precio_unitario, promocion_id, descuento, subtotal) 
-                            VALUES (?, ?, ?, ?, ?, ?, ?)";
+                $sqlItem = "INSERT INTO sale_items (sale_id, product_id, cantidad, precio_unitario, descuento, subtotal) 
+                            VALUES (?, ?, ?, ?, ?, ?)";
                 $stmtItem = $this->db->prepare($sqlItem);
                 $stmtItem->execute([
                     $saleId,
                     $item['product_id'],
                     $item['cantidad'],
                     $item['precio_unitario'],
-                    $item['promocion_id'] ?? null,
                     $item['descuento'] ?? 0,
                     $item['subtotal']
                 ]);

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 27-02-2026 a las 18:34:47
+-- Tiempo de generación: 27-02-2026 a las 19:39:06
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -251,9 +251,9 @@ CREATE TABLE `inventory` (
 --
 
 INSERT INTO `inventory` (`product_id`, `warehouse_id`, `stock_actual`, `last_update`) VALUES
-(1, 1, 90.00, '2026-02-27 16:31:26'),
+(1, 1, 89.00, '2026-02-27 18:36:47'),
 (1, 2, 10.00, '2026-02-27 16:31:26'),
-(2, 1, 40.00, '2026-02-27 15:35:08');
+(2, 1, 39.00, '2026-02-27 18:36:47');
 
 -- --------------------------------------------------------
 
@@ -282,7 +282,9 @@ INSERT INTO `inventory_movements` (`id`, `tipo`, `product_id`, `from_warehouse_i
 (2, 'AJUSTE', 1, 1, NULL, 50.00, 2, 'Reversión de entrada #1', '2026-02-27 15:31:20'),
 (3, 'COMPRA', 1, NULL, 1, 100.00, 2, 'Entrada por compra #2 - Remisión: 66545', '2026-02-27 15:35:08'),
 (4, 'COMPRA', 2, NULL, 1, 40.00, 2, 'Entrada por compra #2 - Remisión: 66545', '2026-02-27 15:35:08'),
-(5, 'TRASLADO', 1, 1, 2, 10.00, 2, 'Traslado #1 - TRASLADO DE MERCANCIA A PUNTO DE VENTA', '2026-02-27 16:31:26');
+(5, 'TRASLADO', 1, 1, 2, 10.00, 2, 'Traslado #1 - TRASLADO DE MERCANCIA A PUNTO DE VENTA', '2026-02-27 16:31:26'),
+(6, 'VENTA', 1, 1, NULL, 1.00, 2, 'Venta POS #1', '2026-02-27 18:36:47'),
+(7, 'VENTA', 2, 1, NULL, 1.00, 2, 'Venta POS #1', '2026-02-27 18:36:47');
 
 -- --------------------------------------------------------
 
@@ -472,6 +474,13 @@ CREATE TABLE `sales` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Volcado de datos para la tabla `sales`
+--
+
+INSERT INTO `sales` (`id`, `user_id`, `tercero_id`, `sede_id`, `tipo`, `subtotal`, `iva_total`, `total`, `estado`, `created_at`) VALUES
+(1, 2, 1, NULL, 'POS', 2950.00, 560.50, 3510.50, 'PAGADA', '2026-02-27 18:36:47');
+
 -- --------------------------------------------------------
 
 --
@@ -489,6 +498,14 @@ CREATE TABLE `sale_items` (
   `subtotal` decimal(12,2) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Volcado de datos para la tabla `sale_items`
+--
+
+INSERT INTO `sale_items` (`id`, `sale_id`, `product_id`, `cantidad`, `precio_unitario`, `promocion_id`, `descuento`, `subtotal`) VALUES
+(1, 1, 1, 1.00, 1500.00, NULL, 0.00, 1500.00),
+(2, 1, 2, 1.00, 1450.00, NULL, 0.00, 1450.00);
+
 -- --------------------------------------------------------
 
 --
@@ -503,6 +520,13 @@ CREATE TABLE `sale_payments` (
   `referencia` varchar(100) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `sale_payments`
+--
+
+INSERT INTO `sale_payments` (`id`, `sale_id`, `metodo`, `monto`, `referencia`, `created_at`) VALUES
+(1, 1, 'EFECTIVO', 4000.00, '', '2026-02-27 18:36:47');
 
 -- --------------------------------------------------------
 
@@ -922,7 +946,7 @@ ALTER TABLE `compras_ordenes_detalles`
 -- AUTO_INCREMENT de la tabla `inventory_movements`
 --
 ALTER TABLE `inventory_movements`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT de la tabla `modules`
@@ -964,19 +988,19 @@ ALTER TABLE `roles`
 -- AUTO_INCREMENT de la tabla `sales`
 --
 ALTER TABLE `sales`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `sale_items`
 --
 ALTER TABLE `sale_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `sale_payments`
 --
 ALTER TABLE `sale_payments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `sedes`

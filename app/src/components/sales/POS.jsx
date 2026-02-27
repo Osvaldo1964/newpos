@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatCurrency } from '../../utils/formatters';
+import SaleTicket from './SaleTicket';
 
 const POS = () => {
     const [products, setProducts] = useState([]);
@@ -18,6 +19,8 @@ const POS = () => {
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [payments, setPayments] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [showTicket, setShowTicket] = useState(false);
+    const [ticketData, setTicketData] = useState(null);
 
     const API_URL = 'http://localhost/newpos/api/public';
     const inputSearchRef = useRef(null);
@@ -120,10 +123,30 @@ const POS = () => {
     };
 
     const processSale = async () => {
-        const totalPaid = payments.reduce((acc, p) => acc + parseFloat(p.monto || 0), 0);
-        if (Math.abs(totalPaid - total) > 0.01) {
-            alert('El total pagado debe coincidir con el total de la venta');
-            return;
+        // Separar pagos en efectivo y otros medios
+        const nonCashTotal = payments
+            .filter(p => p.metodo !== 'EFECTIVO')
+            .reduce((acc, p) => acc + parseFloat(p.monto || 0), 0);
+
+        const cashTotal = payments
+            .filter(p => p.metodo === 'EFECTIVO')
+            .reduce((acc, p) => acc + parseFloat(p.monto || 0), 0);
+
+        const hasCash = payments.some(p => p.metodo === 'EFECTIVO');
+        const totalCovered = nonCashTotal + cashTotal;
+
+        if (hasCash) {
+            // Con efectivo: el total recibido debe cubrir la venta (puede haber vuelto)
+            if (totalCovered < total - 0.01) {
+                alert('El efectivo recibido es insuficiente para cubrir el total de la venta');
+                return;
+            }
+        } else {
+            // Sin efectivo: los medios electrónicos deben coincidir exactamente
+            if (Math.abs(totalCovered - total) > 0.01) {
+                alert('El total pagado debe coincidir exactamente con el total de la venta');
+                return;
+            }
         }
 
         setLoading(true);
@@ -155,10 +178,40 @@ const POS = () => {
             });
 
             if (res.ok) {
-                alert('Venta realizada con éxito');
+                const result = await res.json();
+                const now = new Date();
+                const user = JSON.parse(localStorage.getItem('pos_user'));
+                const warehouse = warehouses.find(w => w.id == selectedWarehouse);
+
+                // Calcular cambio: solo si hay un pago en efectivo que supere el total
+                const efectivoPago = payments.find(p => p.metodo === 'EFECTIVO');
+                const cambio = efectivoPago && parseFloat(efectivoPago.monto) > total
+                    ? parseFloat(efectivoPago.monto) - total
+                    : 0;
+
+                // Armar datos del ticket
+                setTicketData({
+                    saleId: result.sale_id,
+                    fecha: now.toLocaleString('es-CO', {
+                        year: 'numeric', month: '2-digit', day: '2-digit',
+                        hour: '2-digit', minute: '2-digit', second: '2-digit'
+                    }),
+                    cajero: user.nombre,
+                    customer: selectedCustomer?.nombre || 'Público General',
+                    warehouse: warehouse?.nombre || '',
+                    items: cart,
+                    subtotal,
+                    ivaTotal,
+                    total,
+                    payments,
+                    cambio
+                });
+
+                // Limpiar y mostrar ticket
                 setCart([]);
                 setShowPaymentModal(false);
                 setSearchTerm('');
+                setShowTicket(true);
             } else {
                 const err = await res.json();
                 alert(err.error || 'Error al procesar la venta');
@@ -364,7 +417,7 @@ const POS = () => {
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Monto</label>
+                                                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Monto Recibido</label>
                                                     <input
                                                         type="number"
                                                         className="input-field"
@@ -377,6 +430,24 @@ const POS = () => {
                                                     />
                                                 </div>
                                             </div>
+                                            {/* Cambio: solo si es efectivo y el monto supera el total */}
+                                            {p.metodo === 'EFECTIVO' && parseFloat(p.monto) > total && (
+                                                <div style={{
+                                                    marginTop: '0.75rem',
+                                                    padding: '0.75rem 1rem',
+                                                    background: '#DCFCE7',
+                                                    borderRadius: '10px',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    border: '1px solid #86EFAC'
+                                                }}>
+                                                    <span style={{ fontWeight: 700, color: '#166534', fontSize: '1rem' }}>💰 CAMBIO / VUELTAS</span>
+                                                    <span style={{ fontWeight: 900, color: '#166534', fontSize: '1.3rem' }}>
+                                                        {formatCurrency(parseFloat(p.monto) - total)}
+                                                    </span>
+                                                </div>
+                                            )}
                                             {p.metodo !== 'EFECTIVO' && (
                                                 <div style={{ marginTop: '0.5rem' }}>
                                                     <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Referencia / Voucher</label>
@@ -420,6 +491,18 @@ const POS = () => {
                     </div>
                 )}
             </AnimatePresence>
+
+            {/* Ticket / Factura */}
+            {showTicket && ticketData && (
+                <SaleTicket
+                    saleData={ticketData}
+                    onClose={() => {
+                        setShowTicket(false);
+                        setTicketData(null);
+                        inputSearchRef.current?.focus();
+                    }}
+                />
+            )}
 
         </div>
     );
