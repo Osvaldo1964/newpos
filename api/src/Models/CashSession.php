@@ -35,14 +35,23 @@ class CashSession
             $data['register_id'],
             $data['monto_apertura']
         ]);
-        return $this->db->lastInsertId();
+        $sessionId = $this->db->lastInsertId();
+
+        // Update register with active session
+        $updateReg = "UPDATE cash_registers SET active_session_id = ? WHERE id = ?";
+        $this->db->prepare($updateReg)->execute([$sessionId, $data['register_id']]);
+
+        return $sessionId;
     }
 
     public function close($id, $montoCierre)
     {
         $sql = "UPDATE cash_sessions SET monto_cierre = ?, estado = 'CERRADA', fecha_cierre = CURRENT_TIMESTAMP WHERE id = ?";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute([$montoCierre, $id]);
+        $this->db->prepare($sql)->execute([$montoCierre, $id]);
+
+        // Clear active session from register
+        $clearReg = "UPDATE cash_registers SET active_session_id = NULL WHERE active_session_id = ?";
+        return $this->db->prepare($clearReg)->execute([$id]);
     }
 
     public function getSessionTotals($sessionId)

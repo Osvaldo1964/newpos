@@ -16,11 +16,30 @@ class Product
     public function getAll()
     {
         $query = "SELECT p.*, c.nombre as category_name, 
-                  (SELECT url FROM product_images WHERE product_id = p.id AND is_main = 1 LIMIT 1) as main_image
+                  (SELECT url FROM product_images WHERE product_id = p.id AND is_main = 1 LIMIT 1) as main_image,
+                  COALESCE((SELECT SUM(stock_actual) FROM inventory WHERE product_id = p.id), 0) as stock_total
                   FROM " . $this->table_name . " p 
                   LEFT JOIN categories c ON p.category_id = c.id 
                   ORDER BY p.created_at DESC";
         $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function search($term)
+    {
+        $like = '%' . $term . '%';
+        $query = "SELECT p.*, c.nombre as category_name,
+                  (SELECT url FROM product_images WHERE product_id = p.id AND is_main = 1 LIMIT 1) as main_image,
+                  COALESCE((SELECT SUM(stock_actual) FROM inventory WHERE product_id = p.id), 0) as stock_total
+                  FROM " . $this->table_name . " p
+                  LEFT JOIN categories c ON p.category_id = c.id
+                  WHERE p.nombre LIKE :term OR p.sku LIKE :term2
+                  ORDER BY p.nombre ASC
+                  LIMIT 20";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':term', $like);
+        $stmt->bindParam(':term2', $like);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -112,5 +131,17 @@ class Product
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id', $imageId);
         return $stmt->execute();
+    }
+
+    public function getStockByWarehouse($productId)
+    {
+        $query = "SELECT i.stock_actual, w.nombre as warehouse_name 
+                  FROM inventory i 
+                  JOIN warehouses w ON i.warehouse_id = w.id 
+                  WHERE i.product_id = :product_id AND i.stock_actual > 0";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':product_id', $productId);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

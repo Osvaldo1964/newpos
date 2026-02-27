@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Eye, Filter, Calendar, MapPin, User as UserIcon, Monitor, ArrowUpCircle, ArrowDownCircle, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatCurrency, formatDate } from '../../utils/formatters';
 
 const CashAudit = () => {
     const [sessions, setSessions] = useState([]);
@@ -117,8 +118,8 @@ const CashAudit = () => {
                                     return (
                                         <tr key={s.id} className={selectedSession?.id === s.id ? 'row-selected' : ''}>
                                             <td style={{ fontSize: '0.85rem' }}>
-                                                <div style={{ fontWeight: 600 }}>{new Date(s.fecha_apertura).toLocaleDateString()}</div>
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(s.fecha_apertura).toLocaleTimeString()}</div>
+                                                <div style={{ fontWeight: 600 }}>{new Date(s.fecha_apertura).toLocaleDateString('es-CO')}</div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(s.fecha_apertura).toLocaleTimeString('es-CO', { hour12: true })}</div>
                                             </td>
                                             <td>
                                                 <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>{s.register_name}</div>
@@ -138,7 +139,7 @@ const CashAudit = () => {
                                             <td style={{ textAlign: 'right', fontWeight: 600 }}>
                                                 {s.estado === 'CERRADA' ? (
                                                     <span style={{ color: diff >= 0 ? 'var(--emerald)' : 'var(--rose)' }}>
-                                                        ${diff.toLocaleString()}
+                                                        {formatCurrency(diff)}
                                                     </span>
                                                 ) : '-'}
                                             </td>
@@ -174,19 +175,19 @@ const CashAudit = () => {
                                     <div style={{ background: 'rgba(255,255,255,0.5)', padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem' }}>
                                         <div className="flex-between" style={{ fontSize: '0.85rem', marginBottom: '0.5rem' }}>
                                             <span>Monto Apertura:</span>
-                                            <b>${parseFloat(selectedSession.monto_apertura).toLocaleString()}</b>
+                                            <b>{formatCurrency(selectedSession.monto_apertura)}</b>
                                         </div>
                                         <div className="flex-between" style={{ fontSize: '0.85rem', color: 'var(--emerald)', marginBottom: '0.5rem' }}>
                                             <span>Ingresos:</span>
-                                            <b>+${parseFloat(details.totals.total_ingresos || 0).toLocaleString()}</b>
+                                            <b>+{formatCurrency(details.totals.total_ingresos || 0)}</b>
                                         </div>
                                         <div className="flex-between" style={{ fontSize: '0.85rem', color: 'var(--rose)', marginBottom: '0.5rem' }}>
                                             <span>Egresos:</span>
-                                            <b>-${parseFloat(details.totals.total_egresos || 0).toLocaleString()}</b>
+                                            <b>-{formatCurrency(details.totals.total_egresos || 0)}</b>
                                         </div>
                                         <div className="flex-between" style={{ fontSize: '1rem', fontWeight: 700, borderTop: '1px solid #ddd', paddingTop: '0.5rem', marginTop: '0.5rem' }}>
                                             <span>Cierre:</span>
-                                            <span>${selectedSession.monto_cierre ? parseFloat(selectedSession.monto_cierre).toLocaleString() : 'PENDIENTE'}</span>
+                                            <span>{selectedSession.monto_cierre ? formatCurrency(selectedSession.monto_cierre) : 'PENDIENTE'}</span>
                                         </div>
                                     </div>
 
@@ -196,11 +197,12 @@ const CashAudit = () => {
                                             details.movements.map((m, i) => (
                                                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.5rem', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
                                                     <div>
-                                                        <div style={{ fontWeight: 600 }}>{m.descripcion}</div>
-                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(m.created_at).toLocaleTimeString()}</div>
+                                                        <div style={{ fontWeight: 600 }}>{m.concept_name || 'Sin categoría'}</div>
+                                                        <div style={{ fontSize: '0.75rem', fontWeight: 500 }}>{m.descripcion}</div>
+                                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{new Date(m.created_at).toLocaleTimeString('es-CO', { hour12: true })} - <span style={{ color: m.tipo === 'INGRESO' ? 'var(--emerald)' : 'var(--rose)' }}>{m.tipo}</span></div>
                                                     </div>
-                                                    <div style={{ color: m.tipo === 'INGRESO' ? 'var(--emerald)' : 'var(--rose)', fontWeight: 700 }}>
-                                                        {m.tipo === 'INGRESO' ? '+' : '-'}${parseFloat(m.monto).toLocaleString()}
+                                                    <div style={{ color: m.tipo === 'INGRESO' ? 'var(--emerald)' : 'var(--rose)', fontWeight: 700, alignSelf: 'center' }}>
+                                                        {m.tipo === 'INGRESO' ? '+' : '-'}{formatCurrency(m.monto)}
                                                     </div>
                                                 </div>
                                             ))}

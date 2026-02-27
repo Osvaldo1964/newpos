@@ -241,7 +241,7 @@ const Users = () => {
             {/* Modal */}
             <AnimatePresence>
                 {isModalOpen && (
-                    <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+                    <div className="modal-overlay">
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
@@ -265,7 +265,7 @@ const Users = () => {
                                             required
                                             className="input-field"
                                             value={formData.nombre}
-                                            onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                                            onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
                                             placeholder="Ej: Juan Pérez"
                                         />
                                     </div>
@@ -277,7 +277,7 @@ const Users = () => {
                                                 required
                                                 className="input-field"
                                                 value={formData.email}
-                                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                                onChange={(e) => setFormData({ ...formData, email: e.target.value.toLowerCase() })}
                                                 placeholder="usuario@ejemplo.com"
                                             />
                                         </div>

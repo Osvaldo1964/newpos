@@ -110,4 +110,28 @@ class CashController
         $response->getBody()->write(json_encode($sessions));
         return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
     }
+    public function updateMovement(Request $request, Response $response, $args)
+    {
+        $id = $args['id'];
+        $data = $request->getParsedBody();
+        $movementModel = new CashMovement($this->db);
+
+        if ($movementModel->update($id, $data)) {
+            $response->getBody()->write(json_encode(['message' => 'Movimiento actualizado']));
+            return $response->withStatus(200);
+        }
+        return $response->withStatus(500);
+    }
+
+    public function deleteMovement(Request $request, Response $response, $args)
+    {
+        $id = $args['id'];
+        $movementModel = new CashMovement($this->db);
+
+        if ($movementModel->delete($id)) {
+            $response->getBody()->write(json_encode(['message' => 'Movimiento eliminado']));
+            return $response->withStatus(200);
+        }
+        return $response->withStatus(500);
+    }
 }

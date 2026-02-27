@@ -183,7 +183,7 @@ const Categories = () => {
             {/* Modal */}
             <AnimatePresence>
                 {isModalOpen && (
-                    <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+                    <div className="modal-overlay">
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
@@ -207,7 +207,7 @@ const Categories = () => {
                                             autoFocus
                                             className="input-field"
                                             value={newCategoryName}
-                                            onChange={(e) => setNewCategoryName(e.target.value)}
+                                            onChange={(e) => setNewCategoryName(e.target.value.toUpperCase())}
                                             placeholder="Ej: Electrónica, Ropa, etc."
                                         />
                                     </div>

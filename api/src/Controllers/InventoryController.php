@@ -20,8 +20,17 @@ class InventoryController
     // --- Products ---
     public function getProducts(Request $request, Response $response)
     {
+        $params = $request->getQueryParams();
+        $search = $params['search'] ?? null;
+
         $productModel = new Product($this->db);
-        $products = $productModel->getAll();
+
+        if ($search) {
+            $products = $productModel->search($search);
+        } else {
+            $products = $productModel->getAll();
+        }
+
         $response->getBody()->write(json_encode($products));
         return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
     }
@@ -180,6 +189,15 @@ class InventoryController
         $sedeModel = new Sede($this->db);
         $sedes = $sedeModel->getAll();
         $response->getBody()->write(json_encode($sedes));
+        return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
+    }
+
+    public function getProductStockBreakdown(Request $request, Response $response, $args)
+    {
+        $id = $args['id'];
+        $productModel = new \App\Models\Product($this->db);
+        $breakdown = $productModel->getStockByWarehouse($id);
+        $response->getBody()->write(json_encode($breakdown));
         return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
     }
 }

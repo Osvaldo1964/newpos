@@ -209,7 +209,7 @@ const Warehouses = () => {
             {/* Modal */}
             <AnimatePresence>
                 {isModalOpen && (
-                    <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+                    <div className="modal-overlay">
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
@@ -233,7 +233,7 @@ const Warehouses = () => {
                                             required
                                             className="input-field"
                                             value={formData.nombre}
-                                            onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                                            onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
                                             placeholder="Ej: Bodega Central, Depósito 1, etc."
                                         />
                                     </div>

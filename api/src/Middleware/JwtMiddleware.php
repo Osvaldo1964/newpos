@@ -14,6 +14,7 @@ class JwtMiddleware
 
     public function __invoke(Request $request, Handler $handler): Response
     {
+        JWT::$leeway = 60; // Allow 60s clock skew
         $authHeader = $request->getHeaderLine('Authorization');
 
         if (!$authHeader) {
@@ -31,7 +32,10 @@ class JwtMiddleware
             return $handler->handle($request);
         } catch (\Exception $e) {
             $response = new SlimResponse();
-            $response->getBody()->write(json_encode(['error' => 'Token inválido o expirado']));
+            $response->getBody()->write(json_encode([
+                'error' => 'Token inválido o expirado',
+                'debug' => $e->getMessage()
+            ]));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(401);
         }
     }

@@ -37,14 +37,15 @@ class AuthController
             $permissions = $userModel->getPermissions($user['role_id']);
 
             $payload = [
-                'iat' => time(),
-                'exp' => time() + (60 * 60 * 24), // 24 horas
+                'iat' => time() - 30, // 30s de margen
+                'exp' => time() + (60 * 60), // 1 hora
                 'sub' => $user['id'],
                 'user' => [
                     'id' => $user['id'],
                     'nombre' => $user['nombre'],
                     'email' => $user['email'],
                     'role' => $user['role_name'],
+                    'role_id' => $user['role_id'],
                     'permissions' => $permissions
                 ]
             ];

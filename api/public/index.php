@@ -1,5 +1,6 @@
 <?php
 use Psr\Http\Message\ResponseInterface as Response;
+date_default_timezone_set('America/Bogota');
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
 use App\Config\Database;
@@ -11,6 +12,11 @@ use App\Controllers\UserController;
 use App\Controllers\RoleController;
 use App\Controllers\CashRegisterController;
 use App\Controllers\CashController;
+use App\Controllers\CashConceptController;
+use App\Controllers\TerceroController;
+use App\Controllers\PurchaseController;
+use App\Controllers\StockTransferController;
+use App\Controllers\SaleController;
 use App\Middleware\JwtMiddleware;
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -100,6 +106,7 @@ $app->group('/inventory', function ($group) {
     $group->post('/products', [$controller, 'createProduct']);
     $group->put('/products/{id}', [$controller, 'updateProduct']);
     $group->delete('/products/{id}', [$controller, 'deleteProduct']);
+    $group->get('/products/{id}/stock', [$controller, 'getProductStockBreakdown']);
 
     $group->get('/categories', [$controller, 'getCategories']);
     $group->get('/warehouses', [$controller, 'getWarehouses']);
@@ -108,6 +115,27 @@ $app->group('/inventory', function ($group) {
     $group->delete('/warehouses/{id}', [$controller, 'deleteWarehouse']);
     $group->get('/sedes', [$controller, 'getSedes']);
 })->add(new JwtMiddleware());
+
+// --- Traslados (Grupo Aislado para Depuración) ---
+$app->group('/stock-transfers', function ($group) {
+    $db = (new Database())->getConnection();
+    $transferController = new \App\Controllers\StockTransferController($db);
+
+    $group->get('', [$transferController, 'getTransfers']);
+    $group->get('/{id}', [$transferController, 'getTransferDetails']);
+    $group->post('', [$transferController, 'createTransfer']);
+    $group->put('/{id}', [$transferController, 'updateTransfer']);
+})->add(new JwtMiddleware());
+
+// --- Ventas ---
+$app->group('/sales', function ($group) {
+    $db = (new App\Config\Database())->getConnection();
+    $controller = new SaleController($db);
+
+    $group->get('', [$controller, 'getSales']);
+    $group->get('/{id}', [$controller, 'getSaleDetail']);
+    $group->post('', [$controller, 'createSale']);
+})->add(new App\Middleware\JwtMiddleware());
 
 // --- Categories CRUD ---
 $app->group('/categories', function ($group) {
@@ -178,7 +206,50 @@ $app->group('/cash', function ($group) {
     $group->put('/close/{id}', [$controller, 'closeSession']);
     $group->get('/session/{id}', [$controller, 'getSessionDetails']);
     $group->post('/movements', [$controller, 'addMovement']);
+    $group->put('/movements/{id}', [$controller, 'updateMovement']);
+    $group->delete('/movements/{id}', [$controller, 'deleteMovement']);
     $group->get('/audit', [$controller, 'getAuditLogs']);
+})->add(new JwtMiddleware());
+
+// --- Terceros (Clientes / Proveedores) ---
+$app->group('/terceros', function ($group) {
+    $db = (new Database())->getConnection();
+    $controller = new TerceroController($db);
+    $group->get('', [$controller, 'getAll']);
+    $group->get('/search', [$controller, 'search']);
+    $group->post('', [$controller, 'create']);
+    $group->put('/{id}', [$controller, 'update']);
+    $group->delete('/{id}', [$controller, 'delete']);
+})->add(new JwtMiddleware());
+
+// --- Cash Concepts ---
+$app->group('/cash-concepts', function ($group) {
+    $db = (new Database())->getConnection();
+    $controller = new CashConceptController($db);
+    $group->get('', [$controller, 'getAll']);
+    $group->get('/tipo/{tipo}', [$controller, 'getByType']);
+    $group->post('', [$controller, 'create']);
+    $group->put('/{id}', [$controller, 'update']);
+    $group->delete('/{id}', [$controller, 'delete']);
+})->add(new JwtMiddleware());
+
+
+// --- Compras (Órdenes y Entradas) ---
+$app->group('/compras', function ($group) {
+    $db = (new Database())->getConnection();
+    $controller = new PurchaseController($db);
+
+    $group->get('/ordenes', [$controller, 'getOrders']);
+    $group->post('/ordenes', [$controller, 'createOrder']);
+    $group->get('/ordenes/{id}', [$controller, 'getOrderDetails']);
+    $group->put('/ordenes/{id}', [$controller, 'updateOrder']);
+    $group->delete('/ordenes/{id}', [$controller, 'deleteOrder']);
+
+    $group->get('/entradas', [$controller, 'getEntries']);
+    $group->post('/entradas', [$controller, 'createEntry']);
+    $group->get('/entradas/{id}', [$controller, 'getEntryDetails']);
+    $group->put('/entradas/{id}', [$controller, 'updateEntry']);
+    $group->delete('/entradas/{id}', [$controller, 'deleteEntry']);
 })->add(new JwtMiddleware());
 
 $app->run();

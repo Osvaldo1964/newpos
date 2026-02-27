@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Search, Edit2, Trash2, Package, Tag, DollarSign, Percent, X, Upload, Image as ImageIcon } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Package, Tag, DollarSign, Percent, X, Upload, Image as ImageIcon, Warehouse } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatCurrency, parseLocaleNumber } from '../../utils/formatters';
 
 const Items = () => {
     const [products, setProducts] = useState([]);
@@ -11,7 +12,15 @@ const Items = () => {
     const [editingProduct, setEditingProduct] = useState(null);
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [previews, setPreviews] = useState([]);
+    const [isStockModalOpen, setIsStockModalOpen] = useState(false);
+    const [stockBreakdown, setStockBreakdown] = useState([]);
+    const [stockLoading, setStockLoading] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState(null);
     const fileInputRef = useRef(null);
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 8;
 
     const [formData, setFormData] = useState({
         sku: '',
@@ -48,6 +57,25 @@ const Items = () => {
             console.error('Error fetching data:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleViewStock = async (product) => {
+        setStockLoading(true);
+        setSelectedProduct(product);
+        setIsStockModalOpen(true);
+        try {
+            const token = localStorage.getItem('pos_token');
+            const res = await fetch(`${API_URL}/products/${product.id}/stock`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            setStockBreakdown(data);
+        } catch (error) {
+            console.error('Error fetching stock breakdown:', error);
+            setStockBreakdown([]);
+        } finally {
+            setStockLoading(false);
         }
     };
 
@@ -93,7 +121,13 @@ const Items = () => {
 
         // Use FormData for file uploads
         const data = new FormData();
-        Object.keys(formData).forEach(key => data.append(key, formData[key]));
+        Object.keys(formData).forEach(key => {
+            let value = formData[key];
+            if (key === 'precio_base' || key === 'iva') {
+                value = parseLocaleNumber(value);
+            }
+            data.append(key, value);
+        });
 
         selectedFiles.forEach((file, index) => {
             data.append('images[]', file);
@@ -149,6 +183,16 @@ const Items = () => {
         p.sku.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    // Pagination logic
+    const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
+
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+    };
+
     return (
         <div className="component-fade-in">
             <div className="flex-between">
@@ -165,6 +209,37 @@ const Items = () => {
                 </button>
             </div>
 
+            {/* Inventory Summary Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+                <div className="card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', borderLeft: '4px solid var(--primary)' }}>
+                    <div style={{ padding: '0.75rem', background: 'var(--primary-light)', borderRadius: '12px', color: 'var(--primary)' }}>
+                        <Package size={24} />
+                    </div>
+                    <div>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Total Productos</p>
+                        <h3 style={{ fontSize: '1.5rem', fontWeight: 700 }}>{products.length}</h3>
+                    </div>
+                </div>
+                <div className="card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', borderLeft: '4px solid #10B981' }}>
+                    <div style={{ padding: '0.75rem', background: '#DCFCE7', borderRadius: '12px', color: '#10B981' }}>
+                        <Package size={24} />
+                    </div>
+                    <div>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Existencias Totales</p>
+                        <h3 style={{ fontSize: '1.5rem', fontWeight: 700 }}>{products.reduce((acc, p) => acc + parseFloat(p.stock_total || 0), 0).toLocaleString()}</h3>
+                    </div>
+                </div>
+                <div className="card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', borderLeft: '4px solid #F59E0B' }}>
+                    <div style={{ padding: '0.75rem', background: '#FEF3C7', borderRadius: '12px', color: '#F59E0B' }}>
+                        <DollarSign size={24} />
+                    </div>
+                    <div>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Valor Total Inventario</p>
+                        <h3 style={{ fontSize: '1.5rem', fontWeight: 700 }}>{formatCurrency(products.reduce((acc, p) => acc + (parseFloat(p.stock_total || 0) * parseFloat(p.precio_base)), 0))}</h3>
+                    </div>
+                </div>
+            </div>
+
             <div className="table-container">
                 <div className="table-header">
                     <div style={{ position: 'relative', width: '100%', maxWidth: '300px' }}>
@@ -175,7 +250,10 @@ const Items = () => {
                             className="input-field"
                             style={{ width: '100%', paddingLeft: '2.5rem' }}
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                setCurrentPage(1);
+                            }}
                         />
                     </div>
                 </div>
@@ -187,7 +265,9 @@ const Items = () => {
                             <th>SKU</th>
                             <th>Producto</th>
                             <th>Categoría</th>
+                            <th style={{ textAlign: 'center' }}>Stock</th>
                             <th style={{ textAlign: 'right' }}>Precio</th>
+                            <th style={{ textAlign: 'right' }}>Valor Total</th>
                             <th style={{ textAlign: 'right' }}>Acciones</th>
                         </tr>
                     </thead>
@@ -198,10 +278,10 @@ const Items = () => {
                             </tr>
                         ) : filteredProducts.length === 0 ? (
                             <tr>
-                                <td colSpan="6" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>No se encontraron productos</td>
+                                <td colSpan="8" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>No se encontraron productos</td>
                             </tr>
                         ) : (
-                            filteredProducts.map((product) => (
+                            currentItems.map((product) => (
                                 <motion.tr
                                     key={product.id}
                                     initial={{ opacity: 0 }}
@@ -226,8 +306,32 @@ const Items = () => {
                                             {product.category_name || 'Sin categoría'}
                                         </span>
                                     </td>
+                                    <td style={{ textAlign: 'center' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                                            <span style={{
+                                                fontWeight: 700,
+                                                color: parseFloat(product.stock_total) <= 0 ? '#EF4444' : '#10B981',
+                                                padding: '0.25rem 0.5rem',
+                                                borderRadius: '6px',
+                                                background: parseFloat(product.stock_total) <= 0 ? '#FEE2E2' : '#DCFCE7'
+                                            }}>
+                                                {parseFloat(product.stock_total).toLocaleString()}
+                                            </span>
+                                            <button
+                                                className="btn-action view"
+                                                title="Ver por bodega"
+                                                onClick={() => handleViewStock(product)}
+                                                style={{ padding: '4px', background: 'var(--primary-light)', color: 'var(--primary)', borderRadius: '6px' }}
+                                            >
+                                                <Warehouse size={14} />
+                                            </button>
+                                        </div>
+                                    </td>
                                     <td style={{ textAlign: 'right', fontWeight: 600 }}>
-                                        ${parseFloat(product.precio_base).toLocaleString()}
+                                        {formatCurrency(product.precio_base)}
+                                    </td>
+                                    <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--primary)' }}>
+                                        {formatCurrency(parseFloat(product.stock_total || 0) * parseFloat(product.precio_base))}
                                     </td>
                                     <td style={{ textAlign: 'right' }}>
                                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
@@ -252,12 +356,56 @@ const Items = () => {
                         )}
                     </tbody>
                 </table>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                    <div style={{
+                        padding: '1rem 1.5rem',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        borderTop: '1px solid #E2E8F0',
+                        background: '#F8FAFC'
+                    }}>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                            Mostrando <b>{indexOfFirstItem + 1}</b> - <b>{Math.min(indexOfLastItem, filteredProducts.length)}</b> de <b>{filteredProducts.length}</b> productos
+                        </p>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button
+                                onClick={() => handlePageChange(currentPage - 1)}
+                                disabled={currentPage === 1}
+                                className="btn btn-ghost"
+                                style={{ padding: '0.4rem 0.8rem', opacity: currentPage === 1 ? 0.5 : 1 }}
+                            >
+                                Anterior
+                            </button>
+                            {[...Array(totalPages)].map((_, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => handlePageChange(i + 1)}
+                                    className={`btn ${currentPage === i + 1 ? 'btn-primary' : 'btn-ghost'}`}
+                                    style={{ padding: '0.4rem 0.8rem', minWidth: '38px' }}
+                                >
+                                    {i + 1}
+                                </button>
+                            ))}
+                            <button
+                                onClick={() => handlePageChange(currentPage + 1)}
+                                disabled={currentPage === totalPages}
+                                className="btn btn-ghost"
+                                style={{ padding: '0.4rem 0.8rem', opacity: currentPage === totalPages ? 0.5 : 1 }}
+                            >
+                                Siguiente
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Modal */}
             <AnimatePresence>
                 {isModalOpen && (
-                    <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+                    <div className="modal-overlay">
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
@@ -337,7 +485,7 @@ const Items = () => {
                                                         placeholder="Ej: PROD-001"
                                                         className="input-field"
                                                         value={formData.sku}
-                                                        onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                                                        onChange={(e) => setFormData({ ...formData, sku: e.target.value.toUpperCase() })}
                                                     />
                                                 </div>
                                                 <div className="input-group">
@@ -364,7 +512,7 @@ const Items = () => {
                                                     placeholder="Ej: Camiseta de Algodón Premium"
                                                     className="input-field"
                                                     value={formData.nombre}
-                                                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                                                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
                                                 />
                                             </div>
 
@@ -423,6 +571,61 @@ const Items = () => {
                                     </button>
                                 </div>
                             </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Modal Desglose de Stock */}
+            <AnimatePresence>
+                {isStockModalOpen && (
+                    <div className="modal-overlay">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="modal-content"
+                            style={{ maxWidth: '450px' }}
+                        >
+                            <div className="modal-header">
+                                <h3 className="font-heading">Stock por Bodega</h3>
+                                <button onClick={() => setIsStockModalOpen(false)} className="btn-action"><X size={20} /></button>
+                            </div>
+                            <div className="modal-body">
+                                {selectedProduct && (
+                                    <div style={{ marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
+                                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Producto</p>
+                                        <p style={{ fontWeight: 600, fontSize: '1.1rem' }}>{selectedProduct.nombre}</p>
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 600 }}>SKU: {selectedProduct.sku}</p>
+                                    </div>
+                                )}
+
+                                {stockLoading ? (
+                                    <div style={{ textAlign: 'center', padding: '2rem' }}>Cargando existencias...</div>
+                                ) : stockBreakdown.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                                        No hay existencias registradas en ninguna bodega.
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                        {stockBreakdown.map((item, idx) => (
+                                            <div key={idx} className="glass" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                    <div style={{ padding: '0.5rem', background: 'var(--primary-light)', borderRadius: '8px', color: 'var(--primary)' }}>
+                                                        <Warehouse size={18} />
+                                                    </div>
+                                                    <span style={{ fontWeight: 600 }}>{item.warehouse_name}</span>
+                                                </div>
+                                                <span className="badge badge-success" style={{ fontSize: '1rem', padding: '0.5rem 1rem' }}>
+                                                    {parseFloat(item.stock_actual).toLocaleString()}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="modal-footer" style={{ borderTop: 'none' }}>
+                                <button onClick={() => setIsStockModalOpen(false)} className="btn btn-primary" style={{ width: '100%' }}>Cerrar</button>
+                            </div>
                         </motion.div>
                     </div>
                 )}

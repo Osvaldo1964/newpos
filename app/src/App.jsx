@@ -14,19 +14,28 @@ import {
   Tag,
   Shield,
   Users as UsersIcon,
-  Monitor
+  Monitor,
+  History,
+  FileText
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import './index.css'
 import Items from './components/inventory/Items'
 import Categories from './components/inventory/Categories'
 import Warehouses from './components/inventory/Warehouses'
+import PurchaseOrders from './components/inventory/PurchaseOrders'
+import WarehouseEntries from './components/inventory/WarehouseEntries'
+import StockTransfers from './components/inventory/StockTransfers'
 import Sedes from './components/config/Sedes'
 import Users from './components/config/Users'
 import Permissions from './components/config/Permissions'
 import CashRegisters from './components/config/CashRegisters'
+import CashConcepts from './components/config/CashConcepts'
 import CashManager from './components/cash/CashManager'
 import CashAudit from './components/cash/CashAudit'
+import SessionGuard from './components/cash/SessionGuard'
+import Terceros from './components/contacts/Terceros'
+import POS from './components/sales/POS'
 
 const modules = [
   {
@@ -39,6 +48,8 @@ const modules = [
       { id: 'categorias', title: 'Categorías', icon: <Tag size={20} /> },
       { id: 'items', title: 'Items', icon: <ShoppingBag size={20} /> },
       { id: 'bodegas', title: 'Bodegas', icon: <Package size={20} /> },
+      { id: 'compras_ordenes', title: 'Órdenes de Compra', icon: <FileText size={20} /> },
+      { id: 'compras_entradas', title: 'Entradas a Bodega', icon: <ShoppingBag size={20} /> },
       { id: 'traslados', title: 'Traslados', icon: <ArrowRightLeft size={20} /> },
       { id: 'ajustes', title: 'Ajustes', icon: <TrendingDown size={20} /> }
     ]
@@ -61,9 +72,11 @@ const modules = [
     icon: <Banknote size={32} />,
     color: '#064E3B',
     submodules: [
-      { id: 'apertura', title: 'Apertura/Cierre', icon: <Banknote size={20} /> },
-      { id: 'gastos', title: 'Gastos', icon: <TrendingDown size={20} /> },
-      { id: 'cajas_master', title: 'Gestión de Cajas', icon: <Monitor size={20} /> }
+      { id: 'apertura', title: 'Apertura / Cierre', icon: <Banknote size={20} /> },
+      { id: 'movimientos', title: 'Ingresos / Gastos', icon: <ArrowRightLeft size={20} /> },
+      { id: 'auditoria', title: 'Auditoría', icon: <History size={20} /> },
+      { id: 'cajas_master', title: 'Gestión de Cajas', icon: <Monitor size={20} /> },
+      { id: 'conceptos', title: 'Conceptos Caja', icon: <Tag size={20} /> }
     ]
   },
   {
@@ -96,6 +109,7 @@ const modules = [
     color: '#1E3A8A',
     submodules: [
       { id: 'usuarios', title: 'Usuarios', icon: <UsersIcon size={20} /> },
+      { id: 'terceros', title: 'Terceros', icon: <UsersIcon size={20} /> },
       { id: 'permisos', title: 'Permisos', icon: <Shield size={20} /> },
       { id: 'sedes', title: 'Sedes', icon: <LayoutDashboard size={20} /> }
     ]
@@ -111,6 +125,63 @@ function App() {
   })
   const [activeModule, setActiveModule] = useState(null)
   const [activeSubmodule, setActiveSubmodule] = useState(null)
+  const [activeSession, setActiveSession] = useState(null)
+
+  const API_CASH = 'http://localhost/newpos/api/public/cash'
+
+  React.useEffect(() => {
+    if (user) {
+      fetchActiveSession();
+    }
+  }, [user]);
+
+  const fetchActiveSession = async () => {
+    try {
+      const token = localStorage.getItem('pos_token');
+      if (!token) return;
+
+      const res = await fetch(`${API_CASH}/active`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (res.status === 401) {
+        handleLogout();
+        return;
+      }
+
+      if (res.ok) {
+        const data = await res.json();
+        setActiveSession(data);
+      }
+    } catch (error) {
+      console.error('Error fetching active session:', error);
+    }
+  }
+
+  // Token Expiration Checker
+  React.useEffect(() => {
+    if (!user) return;
+
+    const checkToken = () => {
+      const token = localStorage.getItem('pos_token');
+      if (!token) return;
+
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const now = Math.floor(Date.now() / 1000);
+
+        if (payload.exp < now) {
+          handleLogout();
+          alert('Tu sesión ha expirado por inactividad.');
+        }
+      } catch (e) {
+        console.error('Error parsing token');
+      }
+    };
+
+    const interval = setInterval(checkToken, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, [user]);
 
   const handleLogout = () => {
     localStorage.removeItem('pos_token')
@@ -161,14 +232,27 @@ function App() {
         return <Sedes />
       case 'usuarios':
         return <Users />
+      case 'terceros':
+        return <Terceros />
       case 'permisos':
         return <Permissions />
       case 'cajas_master':
         return <CashRegisters />
+      case 'conceptos':
+        return <CashConcepts />
       case 'apertura':
-        return <CashManager />
-      case 'gastos':
+      case 'movimientos':
+        return <CashManager mode={activeSubmodule} />
+      case 'auditoria':
         return <CashAudit />
+      case 'compras_ordenes':
+        return <PurchaseOrders />
+      case 'compras_entradas':
+        return <WarehouseEntries />
+      case 'traslados':
+        return <StockTransfers />
+      case 'pos':
+        return <POS />
       default:
         return (
           <div className="cards-grid">
@@ -228,58 +312,64 @@ function App() {
       </header>
 
       <AnimatePresence mode="wait">
-        {!activeModule ? (
-          <motion.div
-            key="main-grid"
-            className="cards-grid"
-            variants={containerVariants}
-            initial="hidden"
-            animate="show"
-            exit={{ opacity: 0, scale: 0.95 }}
-          >
-            {modules.map((m) => (
-              <motion.div
-                key={m.id}
-                variants={itemVariants}
-                whileHover={{ y: -5, boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
-                className="module-card"
-                onClick={() => setActiveModule(m)}
-              >
-                <div className="icon-wrapper" style={{ backgroundColor: `${m.color}15`, color: m.color }}>
-                  {m.icon}
-                </div>
-                <h3>{m.title}</h3>
-                <p>{m.description}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-        ) : (
-          <motion.div
-            key="active-module-view"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-          >
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-              <button
-                onClick={handleBackToDashboard}
-                className="btn btn-ghost"
-              >
-                ← Dashboard
-              </button>
-              {activeSubmodule && (
+        <SessionGuard
+          user={user}
+          activeSession={activeSession}
+          onSessionStatusChange={fetchActiveSession}
+        >
+          {!activeModule ? (
+            <motion.div
+              key="main-grid"
+              className="cards-grid"
+              variants={containerVariants}
+              initial="hidden"
+              animate="show"
+              exit={{ opacity: 0, scale: 0.95 }}
+            >
+              {modules.map((m) => (
+                <motion.div
+                  key={m.id}
+                  variants={itemVariants}
+                  whileHover={{ y: -5, boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
+                  className="module-card"
+                  onClick={() => setActiveModule(m)}
+                >
+                  <div className="icon-wrapper" style={{ backgroundColor: `${m.color}15`, color: m.color }}>
+                    {m.icon}
+                  </div>
+                  <h3>{m.title}</h3>
+                  <p>{m.description}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="active-module-view"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+            >
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
                 <button
-                  onClick={handleBackToModule}
+                  onClick={handleBackToDashboard}
                   className="btn btn-ghost"
                 >
-                  ← Volver a {activeModule.title}
+                  ← Dashboard
                 </button>
-              )}
-            </div>
+                {activeSubmodule && (
+                  <button
+                    onClick={handleBackToModule}
+                    className="btn btn-ghost"
+                  >
+                    ← Volver a {activeModule.title}
+                  </button>
+                )}
+              </div>
 
-            {renderSubmodule()}
-          </motion.div>
-        )}
+              {renderSubmodule()}
+            </motion.div>
+          )}
+        </SessionGuard>
       </AnimatePresence>
     </div>
   )

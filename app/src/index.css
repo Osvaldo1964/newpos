@@ -1,13 +1,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
 
 :root {
-  --primary: #1E3A8A; /* Azul Profundo */
-  --secondary: #10B981; /* Verde Esmeralda */
-  --accent: #064E3B; /* Verde Bosque */
+  --primary: #1E3A8A;
+  /* Azul Profundo */
+  --secondary: #10B981;
+  /* Verde Esmeralda */
+  --accent: #064E3B;
+  /* Verde Bosque */
   --bg-main: #F8FAFC;
   --bg-card: #FFFFFF;
   --text-main: #1E293B;
   --text-muted: #64748B;
+  --emerald: #10B981;
+  --rose: #f43f5e;
   --radius-lg: 1rem;
   --radius-md: 0.75rem;
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -28,7 +33,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-h1, h2, h3, h4, .font-heading {
+h1,
+h2,
+h3,
+h4,
+.font-heading {
   font-family: 'Outfit', sans-serif;
 }
 
@@ -41,6 +50,13 @@ h1, h2, h3, h4, .font-heading {
   margin: 0 auto;
   padding: 2rem;
 }
+
+/* POS: reset all padding/margin so in breaks full-page */
+.dashboard-container:has(.pos-container) {
+  max-width: 100%;
+  padding: 1.5rem;
+}
+
 
 .header {
   margin-bottom: 3rem;
@@ -75,7 +91,7 @@ h1, h2, h3, h4, .font-heading {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  border: 1px solid rgba(0,0,0,0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .icon-wrapper {
@@ -145,6 +161,30 @@ h1, h2, h3, h4, .font-heading {
 
 .btn-ghost:hover {
   background: rgba(30, 58, 138, 0.05);
+}
+
+.btn-action {
+  padding: 0.4rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-action:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.btn-action.edit {
+  color: var(--primary);
+}
+
+.btn-action.delete {
+  color: var(--rose);
 }
 
 .input-group {
@@ -274,9 +314,26 @@ h1, h2, h3, h4, .font-heading {
   font-weight: 600;
 }
 
-.badge-blue { background: #DBEAFE; color: #1E40AF; }
-.badge-green { background: #D1FAE5; color: #065F46; }
+.badge-blue {
+  background: #DBEAFE;
+  color: #1E40AF;
+}
 
-.flex-between { display: flex; justify-content: space-between; align-items: center; }
-.gap-2 { gap: 0.5rem; }
-.gap-4 { gap: 1rem; }
+.badge-green {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.gap-4 {
+  gap: 1rem;
+}
