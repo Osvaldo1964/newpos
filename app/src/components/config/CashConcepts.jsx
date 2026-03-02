@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit2, Trash2, Tag, X, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { errorAlert, confirmDialog } from '../../utils/swal';
 
 const CashConcepts = () => {
     const [concepts, setConcepts] = useState([]);
@@ -76,7 +77,7 @@ const CashConcepts = () => {
                 fetchData();
             } else {
                 const data = await res.json();
-                alert(data.error || 'Error al guardar concepto');
+                errorAlert(data.error || 'Error al guardar concepto');
             }
         } catch (error) {
             console.error('Error saving concept:', error);
@@ -84,22 +85,21 @@ const CashConcepts = () => {
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('¿Estás seguro de eliminar este concepto?')) {
-            try {
-                const token = localStorage.getItem('pos_token');
-                const res = await fetch(`${API_URL}/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.ok) {
-                    fetchData();
-                } else {
-                    const data = await res.json();
-                    alert(data.error || 'No se pudo eliminar el concepto');
-                }
-            } catch (error) {
-                console.error('Error deleting concept:', error);
+        if (!(await confirmDialog('¿Estás seguro de eliminar este concepto?', '¿Eliminar concepto?', 'Sí, eliminar'))) return;
+        try {
+            const token = localStorage.getItem('pos_token');
+            const res = await fetch(`${API_URL}/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                fetchData();
+            } else {
+                const data = await res.json();
+                errorAlert(data.error || 'No se pudo eliminar el concepto');
             }
+        } catch (error) {
+            console.error('Error deleting concept:', error);
         }
     };
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, FileText, CheckCircle, XCircle, Eye, ShoppingCart, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { infoAlert, errorAlert, confirmDialog } from '../../utils/swal';
 
 const PurchaseOrders = () => {
     const [orders, setOrders] = useState([]);
@@ -100,7 +101,7 @@ const PurchaseOrders = () => {
     const handleSave = async (e) => {
         e.preventDefault();
         if (formData.items.length === 0) {
-            alert('Debes agregar al menos un producto');
+            infoAlert('Debes agregar al menos un producto', 'Sin productos');
             return;
         }
 
@@ -126,7 +127,7 @@ const PurchaseOrders = () => {
                 fetchOrders();
             } else {
                 const err = await res.json();
-                alert(err.error || 'Error al guardar');
+                errorAlert(err.error || 'Error al guardar');
             }
         } catch (error) {
             console.error('Error saving order:', error);
@@ -134,7 +135,7 @@ const PurchaseOrders = () => {
     };
 
     const handleDeleteOrder = async (id) => {
-        if (!confirm('¿Estás seguro de eliminar esta orden?')) return;
+        if (!(await confirmDialog('¿Estás seguro de eliminar esta orden?', '¿Eliminar orden?', 'Sí, eliminar'))) return;
         try {
             const token = localStorage.getItem('pos_token');
             const res = await fetch(`${API_URL}/${id}`, {
@@ -145,7 +146,7 @@ const PurchaseOrders = () => {
                 fetchOrders();
             } else {
                 const err = await res.json();
-                alert(err.error || 'No se pudo eliminar');
+                errorAlert(err.error || 'No se pudo eliminar');
             }
         } catch (error) {
             console.error('Error deleting order:', error);
@@ -376,7 +377,7 @@ const PurchaseOrders = () => {
                                                                     const val = parseFloat(e.target.value) || 0;
                                                                     const min = item.cantidad_recibida || 0;
                                                                     if (isEditing && val < min) {
-                                                                        alert(`No se puede reducir la cantidad por debajo de lo ya recibido (${min})`);
+                                                                        infoAlert(`No se puede reducir la cantidad por debajo de lo ya recibido (${min})`, 'Cantidad mínima');
                                                                         return;
                                                                     }
                                                                     const updated = [...formData.items];

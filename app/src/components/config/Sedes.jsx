@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit2, Trash2, Globe, MapPin, Phone, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { errorAlert, confirmDialog } from '../../utils/swal';
 
 const Sedes = () => {
     const [sedes, setSedes] = useState([]);
@@ -75,7 +76,7 @@ const Sedes = () => {
                 fetchSedes();
             } else {
                 const data = await res.json();
-                alert(data.error || 'Error al guardar');
+                errorAlert(data.error || 'Error al guardar');
             }
         } catch (error) {
             console.error('Error saving sede:', error);
@@ -83,22 +84,21 @@ const Sedes = () => {
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('¿Estás seguro de eliminar esta sede? Se verificará que no tenga bodegas o usuarios asociados.')) {
-            try {
-                const token = localStorage.getItem('pos_token');
-                const res = await fetch(`${API_URL}/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.ok) {
-                    fetchSedes();
-                } else {
-                    const data = await res.json();
-                    alert(data.error || 'No se pudo eliminar la sede');
-                }
-            } catch (error) {
-                console.error('Error deleting sede:', error);
+        if (!(await confirmDialog('Se verificará que no tenga bodegas o usuarios asociados.', '¿Eliminar sede?', 'Sí, eliminar'))) return;
+        try {
+            const token = localStorage.getItem('pos_token');
+            const res = await fetch(`${API_URL}/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                fetchSedes();
+            } else {
+                const data = await res.json();
+                errorAlert(data.error || 'No se pudo eliminar la sede');
             }
+        } catch (error) {
+            console.error('Error deleting sede:', error);
         }
     };
 

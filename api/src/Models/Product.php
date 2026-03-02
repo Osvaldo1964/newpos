@@ -64,12 +64,14 @@ class Product
     public function create($data)
     {
         $query = "INSERT INTO " . $this->table_name . " 
-                  (sku, nombre, descripcion, precio_base, iva, category_id) 
-                  VALUES (:sku, :nombre, :descripcion, :precio_base, :iva, :category_id)";
+                  (sku, nombre, descripcion, descripcion_publica, activo_ecommerce, precio_base, iva, category_id) 
+                  VALUES (:sku, :nombre, :descripcion, :descripcion_publica, :activo_ecommerce, :precio_base, :iva, :category_id)";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':sku', $data['sku']);
         $stmt->bindParam(':nombre', $data['nombre']);
         $stmt->bindParam(':descripcion', $data['descripcion']);
+        $stmt->bindValue(':descripcion_publica', $data['descripcion_publica'] ?? null);
+        $stmt->bindValue(':activo_ecommerce', $data['activo_ecommerce'] ?? 0, PDO::PARAM_INT);
         $stmt->bindParam(':precio_base', $data['precio_base']);
         $stmt->bindParam(':iva', $data['iva']);
         $stmt->bindParam(':category_id', $data['category_id']);
@@ -84,12 +86,15 @@ class Product
     {
         $query = "UPDATE " . $this->table_name . " 
                   SET sku = :sku, nombre = :nombre, descripcion = :descripcion, 
+                      descripcion_publica = :descripcion_publica, activo_ecommerce = :activo_ecommerce,
                       precio_base = :precio_base, iva = :iva, category_id = :category_id 
                   WHERE id = :id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':sku', $data['sku']);
         $stmt->bindParam(':nombre', $data['nombre']);
         $stmt->bindParam(':descripcion', $data['descripcion']);
+        $stmt->bindValue(':descripcion_publica', $data['descripcion_publica'] ?? null);
+        $stmt->bindValue(':activo_ecommerce', $data['activo_ecommerce'] ?? 0, PDO::PARAM_INT);
         $stmt->bindParam(':precio_base', $data['precio_base']);
         $stmt->bindParam(':iva', $data['iva']);
         $stmt->bindParam(':category_id', $data['category_id']);

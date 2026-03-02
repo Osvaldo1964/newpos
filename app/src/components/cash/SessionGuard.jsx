@@ -51,8 +51,11 @@ const SessionGuard = ({ user, activeSession, onSessionStatusChange, children }) 
     };
 
     const handleSuccess = () => {
+        // Show loading while parent re-fetches the session.
+        // DO NOT set status to 'OK' here — let checkSessionIntegrity() decide
+        // the correct next state (LOCKED_OPEN for new-day opening, or OK if already open).
+        setLoading(true);
         onSessionStatusChange(); // Trigger re-fetch in parent (App.jsx)
-        setStatus('OK');
     };
 
     if (loading || status === 'CHECKING') {

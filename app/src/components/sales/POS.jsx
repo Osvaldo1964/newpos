@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
     Search, ShoppingCart, User, Package, Warehouse,
     Trash2, Plus, Minus, CreditCard, Banknote,
-    ArrowRightLeft, X, CheckCircle, Calculator
+    ArrowRightLeft, X, CheckCircle, Calculator, Tag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatCurrency } from '../../utils/formatters';
 import SaleTicket from './SaleTicket';
+import { infoAlert, errorAlert } from '../../utils/swal';
 
 const POS = () => {
     const [products, setProducts] = useState([]);
@@ -21,6 +22,8 @@ const POS = () => {
     const [loading, setLoading] = useState(false);
     const [showTicket, setShowTicket] = useState(false);
     const [ticketData, setTicketData] = useState(null);
+    const [activePromos, setActivePromos] = useState([]);   // promotions from API
+    const [globalPromo, setGlobalPromo] = useState(null); // manually chosen global promo
 
     const API_URL = 'http://localhost/newpos/api/public';
     const inputSearchRef = useRef(null);
@@ -33,25 +36,55 @@ const POS = () => {
     const fetchInitialData = async () => {
         try {
             const token = localStorage.getItem('pos_token');
-            const [wrRes, custRes] = await Promise.all([
+            const [wrRes, custRes, promoRes] = await Promise.all([
                 fetch(`${API_URL}/inventory/warehouses`, { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch(`${API_URL}/terceros`, { headers: { 'Authorization': `Bearer ${token}` } })
+                fetch(`${API_URL}/terceros`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetch(`${API_URL}/promotions/active`, { headers: { 'Authorization': `Bearer ${token}` } })
             ]);
 
             const wrData = await wrRes.json();
             const custData = await custRes.json();
+            const promoData = promoRes.ok ? await promoRes.json() : [];
 
             setWarehouses(wrData);
             setCustomers(custData);
+            setActivePromos(Array.isArray(promoData) ? promoData : []);
 
             if (wrData.length > 0) setSelectedWarehouse(wrData[0].id);
 
-            // Buscar cliente "Público General" o el primero
             const defaultCust = custData.find(c => c.nombre.toLowerCase().includes('general')) || custData[0];
             setSelectedCustomer(defaultCust);
         } catch (error) {
             console.error('Error fetching POS data:', error);
         }
+    };
+
+    /**
+     * Resolve best promotion for a cart item.
+     * Priority: product-specific > category > global
+     * Returns { promo, descuento } or null.
+     */
+    const resolvePromo = (product) => {
+        // 1. Product-specific
+        const byProduct = activePromos.find(p =>
+            p.product_ids && p.product_ids.includes(product.id)
+        );
+        if (byProduct) return byProduct;
+
+        // 2. Category
+        const byCategory = activePromos.find(p =>
+            p.category_ids && p.category_ids.includes(product.category_id)
+        );
+        if (byCategory) return byCategory;
+
+        // 3. Global (no targets)
+        return null; // global promos are applied manually via globalPromo selector
+    };
+
+    const calcDiscount = (promo, subtotal) => {
+        if (!promo) return 0;
+        if (promo.tipo === 'PORCENTAJE') return Math.round(subtotal * parseFloat(promo.valor) / 100 * 100) / 100;
+        return Math.min(parseFloat(promo.valor), subtotal); // FIJO, capped at subtotal
     };
 
     const handleSearch = async (term) => {
@@ -76,21 +109,29 @@ const POS = () => {
     const addToCart = (product) => {
         const existing = cart.find(item => item.product_id === product.id);
         if (existing) {
-            setCart(cart.map(item =>
-                item.product_id === product.id
-                    ? { ...item, cantidad: item.cantidad + 1, subtotal: (item.cantidad + 1) * item.precio_unitario }
-                    : item
-            ));
+            setCart(cart.map(item => {
+                if (item.product_id !== product.id) return item;
+                const qty = item.cantidad + 1;
+                const subRaw = qty * item.precio_unitario;
+                const desc = calcDiscount(item.promo, subRaw);
+                return { ...item, cantidad: qty, subtotal: subRaw - desc, descuento: desc };
+            }));
         } else {
             const precio = parseFloat(product.precio_base);
+            const promo = resolvePromo(product);
+            const desc = calcDiscount(promo, precio);
             setCart([...cart, {
                 product_id: product.id,
+                category_id: product.category_id,
                 nombre: product.nombre,
                 sku: product.sku,
                 precio_unitario: precio,
                 cantidad: 1,
                 iva: parseFloat(product.iva || 0),
-                subtotal: precio
+                subtotal: precio - desc,
+                descuento: desc,
+                promocion_id: promo ? promo.id : null,
+                promo: promo
             }]);
         }
         setSearchTerm('');
@@ -100,11 +141,11 @@ const POS = () => {
 
     const updateQuantity = (productId, delta) => {
         setCart(cart.map(item => {
-            if (item.product_id === productId) {
-                const newQty = Math.max(1, item.cantidad + delta);
-                return { ...item, cantidad: newQty, subtotal: newQty * item.precio_unitario };
-            }
-            return item;
+            if (item.product_id !== productId) return item;
+            const qty = Math.max(1, item.cantidad + delta);
+            const subRaw = qty * item.precio_unitario;
+            const desc = calcDiscount(item.promo, subRaw);
+            return { ...item, cantidad: qty, subtotal: subRaw - desc, descuento: desc };
         }));
     };
 
@@ -113,8 +154,12 @@ const POS = () => {
     };
 
     const subtotal = cart.reduce((acc, item) => acc + item.subtotal, 0);
+    const totalDescItems = cart.reduce((acc, item) => acc + (item.descuento || 0), 0);
     const ivaTotal = cart.reduce((acc, item) => acc + (item.subtotal * (item.iva / 100)), 0);
-    const total = subtotal + ivaTotal;
+
+    // Global promo discount applies over (subtotal - already-discounted items)
+    const globalDiscount = globalPromo ? calcDiscount(globalPromo, subtotal) : 0;
+    const total = subtotal - globalDiscount + ivaTotal;
 
     const handleFinishSale = async () => {
         if (cart.length === 0) return;
@@ -138,13 +183,13 @@ const POS = () => {
         if (hasCash) {
             // Con efectivo: el total recibido debe cubrir la venta (puede haber vuelto)
             if (totalCovered < total - 0.01) {
-                alert('El efectivo recibido es insuficiente para cubrir el total de la venta');
+                infoAlert('El efectivo recibido es insuficiente para cubrir el total de la venta', 'Pago insuficiente');
                 return;
             }
         } else {
             // Sin efectivo: los medios electrónicos deben coincidir exactamente
             if (Math.abs(totalCovered - total) > 0.01) {
-                alert('El total pagado debe coincidir exactamente con el total de la venta');
+                infoAlert('El total pagado debe coincidir exactamente con el total de la venta', 'Monto incorrecto');
                 return;
             }
         }
@@ -161,9 +206,15 @@ const POS = () => {
                 sede_id: user.sede_id,
                 warehouse_id: selectedWarehouse,
                 subtotal: subtotal,
+                descuento_total: totalDescItems + globalDiscount,
                 iva_total: ivaTotal,
                 total: total,
-                items: cart,
+                global_promo_id: globalPromo?.id || null,
+                items: cart.map(item => ({
+                    ...item,
+                    descuento: item.descuento || 0,
+                    promocion_id: item.promocion_id || null
+                })),
                 payments: payments,
                 cash_session_id: session?.id
             };
@@ -189,7 +240,6 @@ const POS = () => {
                     ? parseFloat(efectivoPago.monto) - total
                     : 0;
 
-                // Armar datos del ticket
                 setTicketData({
                     saleId: result.sale_id,
                     fecha: now.toLocaleString('es-CO', {
@@ -201,6 +251,8 @@ const POS = () => {
                     warehouse: warehouse?.nombre || '',
                     items: cart,
                     subtotal,
+                    descuentoTotal: totalDescItems + globalDiscount,
+                    globalPromo,
                     ivaTotal,
                     total,
                     payments,
@@ -214,11 +266,11 @@ const POS = () => {
                 setShowTicket(true);
             } else {
                 const err = await res.json();
-                alert(err.error || 'Error al procesar la venta');
+                errorAlert(err.error || 'Error al procesar la venta');
             }
         } catch (error) {
             console.error('Error processing sale:', error);
-            alert('Error crítico de red');
+            errorAlert('Error crítico de red');
         } finally {
             setLoading(false);
         }
@@ -300,8 +352,9 @@ const POS = () => {
                         <thead>
                             <tr>
                                 <th>Producto</th>
-                                <th style={{ textAlign: 'center' }}>Cantidad</th>
+                                <th style={{ textAlign: 'center' }}>Cant.</th>
                                 <th style={{ textAlign: 'right' }}>Precio</th>
+                                <th style={{ textAlign: 'right', color: 'var(--emerald)' }}>Desc.</th>
                                 <th style={{ textAlign: 'right' }}>Subtotal</th>
                                 <th></th>
                             </tr>
@@ -312,6 +365,11 @@ const POS = () => {
                                     <td>
                                         <div style={{ fontWeight: 600 }}>{item.nombre}</div>
                                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{item.sku}</div>
+                                        {item.promo && (
+                                            <div style={{ fontSize: '0.7rem', color: 'var(--emerald)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                                                <Tag size={10} /> {item.promo.nombre}
+                                            </div>
+                                        )}
                                     </td>
                                     <td style={{ textAlign: 'center' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
@@ -321,6 +379,9 @@ const POS = () => {
                                         </div>
                                     </td>
                                     <td style={{ textAlign: 'right' }}>{formatCurrency(item.precio_unitario)}</td>
+                                    <td style={{ textAlign: 'right', color: item.descuento > 0 ? 'var(--emerald)' : 'var(--text-muted)', fontWeight: item.descuento > 0 ? 700 : 400 }}>
+                                        {item.descuento > 0 ? `-${formatCurrency(item.descuento)}` : '—'}
+                                    </td>
                                     <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatCurrency(item.subtotal)}</td>
                                     <td>
                                         <button className="btn-action" style={{ color: '#EF4444' }} onClick={() => removeFromCart(item.product_id)}>
@@ -349,21 +410,54 @@ const POS = () => {
                     </select>
                 </div>
 
-                <div className="card" style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <h3 className="font-heading" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div className="card" style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <h3 className="font-heading" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <ShoppingCart size={20} /> Resumen de Venta
                     </h3>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
-                        <div className="flex-between">
-                            <span style={{ color: 'var(--text-muted)' }}>Subtotal</span>
-                            <span>{formatCurrency(subtotal)}</span>
+                    {/* Promotion Global Selector */}
+                    {activePromos.some(p => !p.product_ids?.length && !p.category_ids?.length) && (
+                        <div>
+                            <label className="input-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <Tag size={14} /> Promoción Global
+                            </label>
+                            <select className="input-field"
+                                value={globalPromo?.id || ''}
+                                onChange={e => setGlobalPromo(
+                                    e.target.value ? activePromos.find(p => p.id == e.target.value) : null
+                                )}
+                            >
+                                <option value="">Sin promoción adicional</option>
+                                {activePromos
+                                    .filter(p => !p.product_ids?.length && !p.category_ids?.length)
+                                    .map(p => (
+                                        <option key={p.id} value={p.id}>
+                                            {p.nombre} ({p.tipo === 'PORCENTAJE' ? `${p.valor}%` : `$${Number(p.valor).toLocaleString('es-CO')}`})
+                                        </option>
+                                    ))
+                                }
+                            </select>
                         </div>
+                    )}
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', flex: 1 }}>
+                        <div className="flex-between">
+                            <span style={{ color: 'var(--text-muted)' }}>Subtotal bruto</span>
+                            <span>{formatCurrency(cart.reduce((a, i) => a + i.cantidad * i.precio_unitario, 0))}</span>
+                        </div>
+                        {(totalDescItems + globalDiscount) > 0 && (
+                            <div className="flex-between" style={{ color: 'var(--emerald)' }}>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <Tag size={14} /> Descuentos
+                                </span>
+                                <span style={{ fontWeight: 700 }}>-{formatCurrency(totalDescItems + globalDiscount)}</span>
+                            </div>
+                        )}
                         <div className="flex-between">
                             <span style={{ color: 'var(--text-muted)' }}>IVA</span>
                             <span>{formatCurrency(ivaTotal)}</span>
                         </div>
-                        <div style={{ borderTop: '2px dashed var(--border-color)', margin: '0.5rem 0' }}></div>
+                        <div style={{ borderTop: '2px dashed var(--border-color)', margin: '0.25rem 0' }}></div>
                         <div className="flex-between" style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)' }}>
                             <span>TOTAL</span>
                             <span>{formatCurrency(total)}</span>
@@ -372,7 +466,7 @@ const POS = () => {
 
                     <button
                         className="btn btn-primary"
-                        style={{ width: '100%', padding: '1.2rem', fontSize: '1.1rem', marginTop: '2rem' }}
+                        style={{ width: '100%', padding: '1.2rem', fontSize: '1.1rem' }}
                         disabled={cart.length === 0}
                         onClick={handleFinishSale}
                     >

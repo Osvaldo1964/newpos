@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit2, Trash2, Users, User, Building2, Mail, Phone, MapPin, CheckCircle, XCircle, Tag, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { errorAlert, confirmDialog } from '../../utils/swal';
 
 const Terceros = () => {
     const [terceros, setTerceros] = useState([]);
@@ -77,7 +78,7 @@ const Terceros = () => {
                 fetchTerceros();
             } else {
                 const data = await res.json();
-                alert(data.error || 'Error al guardar');
+                errorAlert(data.error || 'Error al guardar');
             }
         } catch (error) {
             console.error('Error saving tercero:', error);
@@ -85,7 +86,7 @@ const Terceros = () => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('¿Estás seguro de eliminar este registro?')) return;
+        if (!(await confirmDialog('¿Estás seguro de eliminar este registro?', '¿Eliminar tercero?', 'Sí, eliminar'))) return;
         try {
             const token = localStorage.getItem('pos_token');
             const res = await fetch(`${API_URL}/${id}`, {

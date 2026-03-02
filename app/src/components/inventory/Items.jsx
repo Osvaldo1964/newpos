@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Search, Edit2, Trash2, Package, Tag, DollarSign, Percent, X, Upload, Image as ImageIcon, Warehouse } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatCurrency, parseLocaleNumber } from '../../utils/formatters';
+import { errorAlert, confirmDialog } from '../../utils/swal';
 
 const Items = () => {
     const [products, setProducts] = useState([]);
@@ -26,6 +27,8 @@ const Items = () => {
         sku: '',
         nombre: '',
         descripcion: '',
+        descripcion_publica: '',
+        activo_ecommerce: 0,
         precio_base: 0,
         iva: 0,
         category_id: ''
@@ -85,7 +88,9 @@ const Items = () => {
             setFormData({
                 sku: product.sku,
                 nombre: product.nombre,
-                descripcion: product.descripcion,
+                descripcion: product.descripcion || '',
+                descripcion_publica: product.descripcion_publica || '',
+                activo_ecommerce: parseInt(product.activo_ecommerce) || 0,
                 precio_base: product.precio_base,
                 iva: product.iva,
                 category_id: product.category_id
@@ -97,6 +102,8 @@ const Items = () => {
                 sku: '',
                 nombre: '',
                 descripcion: '',
+                descripcion_publica: '',
+                activo_ecommerce: 0,
                 precio_base: 0,
                 iva: 0,
                 category_id: ''
@@ -156,7 +163,7 @@ const Items = () => {
                 fetchData();
             } else {
                 const err = await res.json();
-                alert(err.error || 'Error al guardar');
+                errorAlert(err.error || 'Error al guardar');
             }
         } catch (error) {
             console.error('Error saving product:', error);
@@ -164,17 +171,16 @@ const Items = () => {
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('¿Estás seguro de eliminar este producto?')) {
-            try {
-                const token = localStorage.getItem('pos_token');
-                await fetch(`${API_URL}/products/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                fetchData();
-            } catch (error) {
-                console.error('Error deleting product:', error);
-            }
+        if (!(await confirmDialog('¿Estás seguro de eliminar este producto?', '¿Eliminar producto?', 'Sí, eliminar'))) return;
+        try {
+            const token = localStorage.getItem('pos_token');
+            await fetch(`${API_URL}/products/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            fetchData();
+        } catch (error) {
+            console.error('Error deleting product:', error);
         }
     };
 
@@ -551,15 +557,39 @@ const Items = () => {
                                         </div>
                                     </div>
 
-                                    <div className="input-group" style={{ marginTop: '2rem' }}>
-                                        <label className="input-label">Descripción Detallada</label>
-                                        <textarea
-                                            className="input-field"
-                                            style={{ height: '120px', resize: 'none', padding: '1rem' }}
-                                            value={formData.descripcion}
-                                            onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                                            placeholder="Describe las características principales, materiales, dimensiones, etc."
-                                        ></textarea>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: '2rem' }}>
+                                        <div className="input-group">
+                                            <label className="input-label">Descripción Interna</label>
+                                            <textarea
+                                                className="input-field"
+                                                style={{ height: '120px', resize: 'none', padding: '1rem' }}
+                                                value={formData.descripcion}
+                                                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                                                placeholder="Notas internas..."
+                                            ></textarea>
+                                        </div>
+                                        <div className="input-group">
+                                            <label className="input-label" style={{ color: 'var(--primary)', display: 'flex', justifyContent: 'space-between' }}>
+                                                <span>Descripción E-commerce</span>
+                                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', cursor: 'pointer', color: 'var(--text-main)', fontWeight: 'normal' }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={formData.activo_ecommerce === 1}
+                                                        onChange={(e) => setFormData({ ...formData, activo_ecommerce: e.target.checked ? 1 : 0 })}
+                                                        style={{ width: '16px', height: '16px' }}
+                                                    />
+                                                    Visible en Tienda
+                                                </label>
+                                            </label>
+                                            <textarea
+                                                className="input-field"
+                                                style={{ height: '120px', resize: 'none', padding: '1rem', borderColor: formData.activo_ecommerce ? 'var(--primary)' : 'var(--border-color)' }}
+                                                value={formData.descripcion_publica}
+                                                onChange={(e) => setFormData({ ...formData, descripcion_publica: e.target.value })}
+                                                placeholder="Descripción enriquecida para los clientes de la tienda online..."
+                                                disabled={formData.activo_ecommerce === 0}
+                                            ></textarea>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="modal-footer" style={{ padding: '1.5rem 2rem' }}>

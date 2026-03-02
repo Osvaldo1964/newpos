@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 27-02-2026 a las 19:39:06
+-- Tiempo de generación: 02-03-2026 a las 20:25:31
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -118,7 +118,8 @@ CREATE TABLE `cash_sessions` (
 --
 
 INSERT INTO `cash_sessions` (`id`, `user_id`, `sede_id`, `register_id`, `monto_apertura`, `monto_cierre`, `estado`, `fecha_apertura`, `fecha_cierre`) VALUES
-(1, 2, 1, 1, 5000.00, NULL, 'ABIERTA', '2026-02-27 13:15:43', NULL);
+(1, 2, 1, 1, 5000.00, 4000.00, 'CERRADA', '2026-02-27 13:15:43', '2026-03-02 12:19:25'),
+(2, 2, 1, 1, 10000.00, NULL, 'ABIERTA', '2026-03-02 12:23:51', NULL);
 
 -- --------------------------------------------------------
 
@@ -251,9 +252,9 @@ CREATE TABLE `inventory` (
 --
 
 INSERT INTO `inventory` (`product_id`, `warehouse_id`, `stock_actual`, `last_update`) VALUES
-(1, 1, 89.00, '2026-02-27 18:36:47'),
+(1, 1, 88.00, '2026-03-02 17:13:45'),
 (1, 2, 10.00, '2026-02-27 16:31:26'),
-(2, 1, 39.00, '2026-02-27 18:36:47');
+(2, 1, 38.00, '2026-03-02 17:13:45');
 
 -- --------------------------------------------------------
 
@@ -284,7 +285,9 @@ INSERT INTO `inventory_movements` (`id`, `tipo`, `product_id`, `from_warehouse_i
 (4, 'COMPRA', 2, NULL, 1, 40.00, 2, 'Entrada por compra #2 - Remisión: 66545', '2026-02-27 15:35:08'),
 (5, 'TRASLADO', 1, 1, 2, 10.00, 2, 'Traslado #1 - TRASLADO DE MERCANCIA A PUNTO DE VENTA', '2026-02-27 16:31:26'),
 (6, 'VENTA', 1, 1, NULL, 1.00, 2, 'Venta POS #1', '2026-02-27 18:36:47'),
-(7, 'VENTA', 2, 1, NULL, 1.00, 2, 'Venta POS #1', '2026-02-27 18:36:47');
+(7, 'VENTA', 2, 1, NULL, 1.00, 2, 'Venta POS #1', '2026-02-27 18:36:47'),
+(8, 'VENTA', 1, 1, NULL, 1.00, 1, 'Venta POS #2', '2026-03-02 17:13:45'),
+(9, 'VENTA', 2, 1, NULL, 1.00, 1, 'Venta POS #2', '2026-03-02 17:13:45');
 
 -- --------------------------------------------------------
 
@@ -309,6 +312,64 @@ INSERT INTO `modules` (`id`, `nombre`, `slug`) VALUES
 (4, 'E-commerce', 'ecommerce'),
 (5, 'Reportes', 'reports'),
 (6, 'Configuración', 'config');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `online_orders`
+--
+
+CREATE TABLE `online_orders` (
+  `id` int(11) NOT NULL,
+  `sale_id` int(11) DEFAULT NULL,
+  `tercero_id` int(11) DEFAULT NULL,
+  `customer_name` varchar(150) NOT NULL,
+  `customer_email` varchar(100) DEFAULT NULL,
+  `customer_phone` varchar(30) DEFAULT NULL,
+  `customer_address` text DEFAULT NULL,
+  `customer_documento` varchar(30) DEFAULT NULL,
+  `subtotal` decimal(12,2) DEFAULT 0.00,
+  `iva_total` decimal(12,2) DEFAULT 0.00,
+  `total` decimal(12,2) DEFAULT 0.00,
+  `metodo_pago` enum('WOMPI','PAYU','MERCADOPAGO','EFECTIVO','PENDIENTE') DEFAULT 'PENDIENTE',
+  `estado` enum('PENDIENTE','PAGADO','DESPACHADO','COMPLETADO','CANCELADO') DEFAULT 'PENDIENTE',
+  `referencia_pago` varchar(250) DEFAULT NULL,
+  `notas` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `online_orders`
+--
+
+INSERT INTO `online_orders` (`id`, `sale_id`, `tercero_id`, `customer_name`, `customer_email`, `customer_phone`, `customer_address`, `customer_documento`, `subtotal`, `iva_total`, `total`, `metodo_pago`, `estado`, `referencia_pago`, `notas`, `created_at`, `updated_at`) VALUES
+(1, 2, 2, 'MARIA SUAREZ', 'maria@google.com', '3023898254', 'URB SAN LORENZO MZ J CS 34', '665588', 2950.00, 560.50, 3510.50, '', 'DESPACHADO', '', 'NINGUNA', '2026-03-02 16:54:21', '2026-03-02 19:21:46');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `online_order_items`
+--
+
+CREATE TABLE `online_order_items` (
+  `id` int(11) NOT NULL,
+  `order_id` int(11) NOT NULL,
+  `product_id` int(11) NOT NULL,
+  `nombre_producto` varchar(150) NOT NULL,
+  `cantidad` int(11) NOT NULL DEFAULT 1,
+  `precio_unitario` decimal(12,2) NOT NULL,
+  `iva` decimal(5,2) DEFAULT 0.00,
+  `subtotal` decimal(12,2) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `online_order_items`
+--
+
+INSERT INTO `online_order_items` (`id`, `order_id`, `product_id`, `nombre_producto`, `cantidad`, `precio_unitario`, `iva`, `subtotal`) VALUES
+(1, 1, 1, 'PRUEBA', 1, 1500.00, 19.00, 1500.00),
+(2, 1, 2, 'PINTURA TIPO B', 1, 1450.00, 19.00, 1450.00);
 
 -- --------------------------------------------------------
 
@@ -342,6 +403,9 @@ CREATE TABLE `products` (
   `sku` varchar(50) NOT NULL,
   `nombre` varchar(150) NOT NULL,
   `descripcion` text DEFAULT NULL,
+  `imagen` varchar(500) DEFAULT NULL,
+  `descripcion_publica` text DEFAULT NULL,
+  `activo_ecommerce` tinyint(4) DEFAULT 0,
   `precio_base` decimal(12,2) NOT NULL,
   `iva` decimal(5,2) DEFAULT 0.00,
   `category_id` int(11) DEFAULT NULL,
@@ -352,9 +416,9 @@ CREATE TABLE `products` (
 -- Volcado de datos para la tabla `products`
 --
 
-INSERT INTO `products` (`id`, `sku`, `nombre`, `descripcion`, `precio_base`, `iva`, `category_id`, `created_at`) VALUES
-(1, 'PRO-001', 'PRUEBA', 'PRUEBA', 1500.00, 19.00, 1, '2026-02-26 17:00:29'),
-(2, 'PINT-002', 'PINTURA TIPO B', '', 1450.00, 19.00, 1, '2026-02-27 15:34:18');
+INSERT INTO `products` (`id`, `sku`, `nombre`, `descripcion`, `imagen`, `descripcion_publica`, `activo_ecommerce`, `precio_base`, `iva`, `category_id`, `created_at`) VALUES
+(1, 'PRO-001', 'PRUEBA', 'PRUEBA', NULL, 'Producto de prueba', 1, 1500.00, 19.00, 1, '2026-02-26 17:00:29'),
+(2, 'PINT-002', 'PINTURA TIPO B', '', NULL, 'Prueba de producto para e-commerce', 1, 1450.00, 19.00, 1, '2026-02-27 15:34:18');
 
 -- --------------------------------------------------------
 
@@ -392,6 +456,33 @@ CREATE TABLE `promotions` (
   `fecha_fin` date DEFAULT NULL,
   `status` tinyint(4) DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `promotions`
+--
+
+INSERT INTO `promotions` (`id`, `nombre`, `tipo`, `valor`, `fecha_inicio`, `fecha_fin`, `status`) VALUES
+(1, 'PROMOCION DE PINTURAS', 'PORCENTAJE', 10.00, '2026-03-02', '2026-03-06', 1);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `promotion_targets`
+--
+
+CREATE TABLE `promotion_targets` (
+  `id` int(11) NOT NULL,
+  `promotion_id` int(11) NOT NULL,
+  `target_type` enum('PRODUCT','CATEGORY') NOT NULL,
+  `target_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `promotion_targets`
+--
+
+INSERT INTO `promotion_targets` (`id`, `promotion_id`, `target_type`, `target_id`) VALUES
+(1, 1, 'PRODUCT', 2);
 
 -- --------------------------------------------------------
 
@@ -479,7 +570,8 @@ CREATE TABLE `sales` (
 --
 
 INSERT INTO `sales` (`id`, `user_id`, `tercero_id`, `sede_id`, `tipo`, `subtotal`, `iva_total`, `total`, `estado`, `created_at`) VALUES
-(1, 2, 1, NULL, 'POS', 2950.00, 560.50, 3510.50, 'PAGADA', '2026-02-27 18:36:47');
+(1, 2, 1, 1, 'POS', 2950.00, 560.50, 3510.50, 'PAGADA', '2026-02-27 18:36:47'),
+(2, 1, 2, 1, 'POS', 2950.00, 560.50, 3510.50, 'PAGADA', '2026-03-02 17:13:45');
 
 -- --------------------------------------------------------
 
@@ -504,7 +596,9 @@ CREATE TABLE `sale_items` (
 
 INSERT INTO `sale_items` (`id`, `sale_id`, `product_id`, `cantidad`, `precio_unitario`, `promocion_id`, `descuento`, `subtotal`) VALUES
 (1, 1, 1, 1.00, 1500.00, NULL, 0.00, 1500.00),
-(2, 1, 2, 1.00, 1450.00, NULL, 0.00, 1450.00);
+(2, 1, 2, 1.00, 1450.00, NULL, 0.00, 1450.00),
+(3, 2, 1, 1.00, 1500.00, NULL, 0.00, 1500.00),
+(4, 2, 2, 1.00, 1450.00, NULL, 0.00, 1450.00);
 
 -- --------------------------------------------------------
 
@@ -526,7 +620,8 @@ CREATE TABLE `sale_payments` (
 --
 
 INSERT INTO `sale_payments` (`id`, `sale_id`, `metodo`, `monto`, `referencia`, `created_at`) VALUES
-(1, 1, 'EFECTIVO', 4000.00, '', '2026-02-27 18:36:47');
+(1, 1, 'EFECTIVO', 4000.00, '', '2026-02-27 18:36:47'),
+(2, 2, 'ONLINE', 3510.50, 'Pedido #1', '2026-03-02 17:13:45');
 
 -- --------------------------------------------------------
 
@@ -596,6 +691,39 @@ INSERT INTO `stock_transfer_items` (`id`, `transfer_id`, `product_id`, `cantidad
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `store_config`
+--
+
+CREATE TABLE `store_config` (
+  `id` int(11) NOT NULL DEFAULT 1,
+  `nombre` varchar(150) DEFAULT 'Mi Tienda',
+  `slogan` varchar(255) DEFAULT NULL,
+  `logo_url` varchar(500) DEFAULT NULL,
+  `direccion` text DEFAULT NULL,
+  `telefono` varchar(30) DEFAULT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `nit` varchar(30) DEFAULT NULL,
+  `ciudad` varchar(100) DEFAULT NULL,
+  `google_client_id` varchar(300) DEFAULT NULL,
+  `wompi_public_key` varchar(300) DEFAULT NULL,
+  `payu_merchant_id` varchar(100) DEFAULT NULL,
+  `payu_account_id` varchar(100) DEFAULT NULL,
+  `payu_api_key` varchar(300) DEFAULT NULL,
+  `payu_test` tinyint(4) DEFAULT 1,
+  `mercadopago_public_key` varchar(300) DEFAULT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `store_config`
+--
+
+INSERT INTO `store_config` (`id`, `nombre`, `slogan`, `logo_url`, `direccion`, `telefono`, `email`, `nit`, `ciudad`, `google_client_id`, `wompi_public_key`, `payu_merchant_id`, `payu_account_id`, `payu_api_key`, `payu_test`, `mercadopago_public_key`, `updated_at`) VALUES
+(1, 'Electro Tienda', 'Tu tecnologÝa al alcance', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '2026-03-02 16:07:23');
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `terceros`
 --
 
@@ -613,15 +741,17 @@ CREATE TABLE `terceros` (
   `telefono` varchar(20) DEFAULT NULL,
   `es_cliente` tinyint(1) DEFAULT 1,
   `es_proveedor` tinyint(1) DEFAULT 0,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `password_hash` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `terceros`
 --
 
-INSERT INTO `terceros` (`id`, `documento`, `tipo_documento`, `tipo_persona`, `nombre`, `razon_social`, `email`, `google_id`, `password`, `direccion`, `telefono`, `es_cliente`, `es_proveedor`, `created_at`) VALUES
-(1, '5566', 'NIT', '', 'JUAN PEREZ', 'EMPRESA DE PRUEBA', 'osvicor1964@gmail.com', NULL, NULL, 'URB SAN LORENZO MZ J CS 34', '3023898254', 1, 1, '2026-02-27 14:20:54');
+INSERT INTO `terceros` (`id`, `documento`, `tipo_documento`, `tipo_persona`, `nombre`, `razon_social`, `email`, `google_id`, `password`, `direccion`, `telefono`, `es_cliente`, `es_proveedor`, `created_at`, `password_hash`) VALUES
+(1, '5566', 'NIT', '', 'JUAN PEREZ', 'EMPRESA DE PRUEBA', 'osvicor1964@gmail.com', NULL, NULL, 'URB SAN LORENZO MZ J CS 34', '3023898254', 1, 1, '2026-02-27 14:20:54', NULL),
+(2, '665588', 'CC', 'Natural', 'MARIA SUAREZ', NULL, 'maria@google.com', NULL, NULL, 'URB SAN LORENZO MZ J CS 34', '3023898254', 1, 0, '2026-03-02 16:49:22', '$2y$10$nfxueRbBgKrWPr0VxBKWIet7SjZujdLqeFYQpYyS/224lz2HCYHlq');
 
 -- --------------------------------------------------------
 
@@ -770,6 +900,20 @@ ALTER TABLE `modules`
   ADD UNIQUE KEY `slug` (`slug`);
 
 --
+-- Indices de la tabla `online_orders`
+--
+ALTER TABLE `online_orders`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_order_sale` (`sale_id`);
+
+--
+-- Indices de la tabla `online_order_items`
+--
+ALTER TABLE `online_order_items`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `order_id` (`order_id`);
+
+--
 -- Indices de la tabla `permissions`
 --
 ALTER TABLE `permissions`
@@ -796,6 +940,13 @@ ALTER TABLE `product_images`
 --
 ALTER TABLE `promotions`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indices de la tabla `promotion_targets`
+--
+ALTER TABLE `promotion_targets`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_promo_target` (`promotion_id`,`target_type`,`target_id`);
 
 --
 -- Indices de la tabla `roles`
@@ -861,6 +1012,12 @@ ALTER TABLE `stock_transfer_items`
   ADD KEY `product_id` (`product_id`);
 
 --
+-- Indices de la tabla `store_config`
+--
+ALTER TABLE `store_config`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indices de la tabla `terceros`
 --
 ALTER TABLE `terceros`
@@ -910,7 +1067,7 @@ ALTER TABLE `cash_registers`
 -- AUTO_INCREMENT de la tabla `cash_sessions`
 --
 ALTER TABLE `cash_sessions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `categories`
@@ -946,13 +1103,25 @@ ALTER TABLE `compras_ordenes_detalles`
 -- AUTO_INCREMENT de la tabla `inventory_movements`
 --
 ALTER TABLE `inventory_movements`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT de la tabla `modules`
 --
 ALTER TABLE `modules`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT de la tabla `online_orders`
+--
+ALTER TABLE `online_orders`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT de la tabla `online_order_items`
+--
+ALTER TABLE `online_order_items`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `permissions`
@@ -976,7 +1145,13 @@ ALTER TABLE `product_images`
 -- AUTO_INCREMENT de la tabla `promotions`
 --
 ALTER TABLE `promotions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT de la tabla `promotion_targets`
+--
+ALTER TABLE `promotion_targets`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `roles`
@@ -988,19 +1163,19 @@ ALTER TABLE `roles`
 -- AUTO_INCREMENT de la tabla `sales`
 --
 ALTER TABLE `sales`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `sale_items`
 --
 ALTER TABLE `sale_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `sale_payments`
 --
 ALTER TABLE `sale_payments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `sedes`
@@ -1024,7 +1199,7 @@ ALTER TABLE `stock_transfer_items`
 -- AUTO_INCREMENT de la tabla `terceros`
 --
 ALTER TABLE `terceros`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `users`
@@ -1111,6 +1286,18 @@ ALTER TABLE `inventory_movements`
   ADD CONSTRAINT `inventory_movements_ibfk_4` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 
 --
+-- Filtros para la tabla `online_orders`
+--
+ALTER TABLE `online_orders`
+  ADD CONSTRAINT `fk_order_sale` FOREIGN KEY (`sale_id`) REFERENCES `sales` (`id`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `online_order_items`
+--
+ALTER TABLE `online_order_items`
+  ADD CONSTRAINT `online_order_items_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `online_orders` (`id`) ON DELETE CASCADE;
+
+--
 -- Filtros para la tabla `products`
 --
 ALTER TABLE `products`
@@ -1121,6 +1308,12 @@ ALTER TABLE `products`
 --
 ALTER TABLE `product_images`
   ADD CONSTRAINT `product_images_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `promotion_targets`
+--
+ALTER TABLE `promotion_targets`
+  ADD CONSTRAINT `promotion_targets_ibfk_1` FOREIGN KEY (`promotion_id`) REFERENCES `promotions` (`id`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `role_permissions`

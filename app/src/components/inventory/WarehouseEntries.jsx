@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, ShoppingBag, CheckCircle, Eye, Truck, Warehouse, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { infoAlert, errorAlert, confirmDialog } from '../../utils/swal';
 
 const WarehouseEntries = () => {
     const [entries, setEntries] = useState([]);
@@ -139,7 +140,7 @@ const WarehouseEntries = () => {
     const handleSave = async (e) => {
         e.preventDefault();
         if (formData.items.length === 0) {
-            alert('Debes agregar al menos un producto');
+            infoAlert('Debes agregar al menos un producto', 'Sin productos');
             return;
         }
 
@@ -165,7 +166,7 @@ const WarehouseEntries = () => {
                 fetchEntries();
             } else {
                 const err = await res.json();
-                alert(err.error || 'Error al guardar');
+                errorAlert(err.error || 'Error al guardar');
             }
         } catch (error) {
             console.error('Error saving entry:', error);
@@ -205,7 +206,10 @@ const WarehouseEntries = () => {
     };
 
     const handleDeleteEntry = async (id) => {
-        if (!confirm('¿Estás seguro de eliminar esta entrada? El stock será revertido y si está vinculada a una OC, las cantidades recibidas se restarán.')) return;
+        if (!(await confirmDialog(
+            '¿Estás seguro? El stock será revertido y las cantidades recibidas de la OC serán restadas.',
+            '¿Eliminar entrada?', 'Sí, eliminar'
+        ))) return;
         try {
             const token = localStorage.getItem('pos_token');
             const res = await fetch(`${API_ENTRADAS}/${id}`, {
@@ -216,7 +220,7 @@ const WarehouseEntries = () => {
                 fetchEntries();
             } else {
                 const err = await res.json();
-                alert(err.error || 'No se pudo eliminar la entrada');
+                errorAlert(err.error || 'No se pudo eliminar la entrada');
             }
         } catch (error) {
             console.error('Error deleting entry:', error);

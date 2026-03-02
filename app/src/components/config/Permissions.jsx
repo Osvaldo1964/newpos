@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Save, CheckCircle, Info, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { errorAlert } from '../../utils/swal';
 
 const Permissions = () => {
     const [roles, setRoles] = useState([]);
@@ -96,7 +97,7 @@ const Permissions = () => {
                 setMessage({ type: 'success', text: 'Permisos guardados con éxito' });
                 setTimeout(() => setMessage(null), 3000);
             } else {
-                alert('Error al guardar permisos');
+                errorAlert('Error al guardar permisos');
             }
         } catch (error) {
             console.error('Error saving permissions:', error);

@@ -1,5 +1,5 @@
 # Plan de Implementación: Sistema NewPOS Moderno
-_Última actualización: 2026-02-27_
+_Última actualización: 2026-03-02_
 
 ## Arquitectura
 
@@ -30,6 +30,7 @@ _Última actualización: 2026-02-27_
 - Maestro de Sedes
 - Maestro de Cajas físicas por Sede
 - Terceros (Clientes / Proveedores: `es_cliente` / `es_proveedor`)
+- **Configuración de Tienda**: Logo, Redes Sociales y Pasarelas de Pago (Wompi, PayU, MercadoPago)
 
 ### 3. Inventario ✅
 - **Categorías** de productos (CRUD)
@@ -38,6 +39,7 @@ _Última actualización: 2026-02-27_
   - Paginación y búsqueda
   - Desglose de stock por bodega (modal interactivo)
   - Búsqueda por nombre/SKU con `?search=` en API
+  - **Flag E-commerce**: Control de visibilidad en tienda online
 - **Bodegas**: CRUD + vínculo a sede
 
 ### 4. Compras ✅
@@ -56,32 +58,17 @@ _Última actualización: 2026-02-27_
 - Auditoría en tiempo real (Admin / Supervisor)
 - Columna `metodo_pago` en `cash_movements`
 
-### 7. Ventas POS ✅ (completado en esta sesión)
-**Base de datos:**
-- Tabla `sales` (`user_id`, `tercero_id`, `sede_id`, `tipo`, `subtotal`, `iva_total`, `total`, `estado`)
-- Tabla `sale_items` (`sale_id`, `product_id`, `cantidad`, `precio_unitario`, `descuento`, `subtotal`)
-- Tabla `sale_payments` (`sale_id`, `metodo`, `monto`, `referencia`)
-
-**Backend (`Sale.php`, `SaleController.php`, rutas `/sales`):**
+### 7. Ventas POS ✅
 - Transacción atómica: cabecera + ítems + descuento de inventario + movimientos + pagos + caja
-- Endpoints: `GET /sales`, `GET /sales/{id}`, `POST /sales`
+- **Modal de Pago multi-forma:** Efectivo, Tarjeta, Transferencia/QR con pago dividido
+- **Ticket de Venta**: Generación automática en formato térmico (80mm) con impresión nativa
 
-**Interfaz POS (`POS.jsx`):**
-- Buscador dinámico (nombre/SKU, Enter para añadir primero, compatible con lector de barras)
-- Selector de bodega de despacho y cliente/tercero
-- Carrito con control de cantidades (+/−)
-- Panel de totales (subtotal, IVA, total)
-- **Modal de Pago multi-forma:** Efectivo, Tarjeta, Transferencia/QR
-  - Pago dividido (múltiples medios en una venta)
-  - Cambio/Vueltas en tiempo real (resaltado en verde cuando efectivo > total)
-  - Validación inteligente: efectivo puede superar el total (excedente = cambio); otros medios deben coincidir exactamente
-- Layout full-width automático al activar el POS (`CSS :has(.pos-container)`)
-
-**Ticket de Venta (`SaleTicket.jsx`):**
-- Se muestra automáticamente al finalizar cada venta
-- Diseño de ticket térmico (80mm, Courier New)
-- Incluye: Nº ticket, fecha/hora, cajero, cliente, bodega, ítems con precio unitario, totales, formas de pago y **cambio/vueltas** si aplica
-- Botón "Imprimir Ticket" → ventana emergente lista para impresora
+### 8. Módulo E-Commerce (Nuevo) ✅
+- **Storefront**: Catálogo público reactivo (`/store/index.html`) con carrito y checkout
+- **API Pública**: Endpoints protegidos bajo prefijo `/p/` para evitar colisiones
+- **Gestión de Pedidos**: Panel administrativo con seguimiento de estados y notificaciones en tiempo real
+- **Integración con Ventas**: Conversión automática de pedidos a ventas POS al marcar como Pagado/Completado
+- **Branding en Reportes**: Logo y datos de la tienda integrados en todos los PDFs y reportes del sistema
 
 ---
 
@@ -90,24 +77,24 @@ _Última actualización: 2026-02-27_
 ```
 api/src/
 ├── Controllers/  SaleController, InventoryController, StockTransferController,
-│                 PurchaseController, CashController, TerceroController, AuthController
+│                 PurchaseController, CashController, TerceroController, AuthController,
+│                 PublicController, PublicAuthController, OnlineOrderController, StoreConfigController
 ├── Models/       Sale, Product (+ search()), StockTransfer, PurchaseOrder, CashSession
 └── Middleware/   JwtMiddleware
 
 app/src/components/
-├── sales/        POS.jsx, SaleTicket.jsx
+├── sales/        POS.jsx, SaleTicket.jsx, OnlineOrders.jsx
 ├── inventory/    Items, Categories, Warehouses, PurchaseOrders,
 │                 WarehouseEntries, StockTransfers
 ├── cash/         CashManager, CashAudit, SessionGuard
-├── config/       Sedes, Users, Permissions, CashRegisters, CashConcepts
+├── config/       Sedes, Users, Permissions, CashRegisters, CashConcepts, StoreSettings
 └── contacts/     Terceros
 ```
 
 ---
 
 ## Próximos Pasos
-1. Historial de ventas con filtros por fecha / cajero
-2. Anulación de ventas (reversión de stock y caja)
-3. Reportes de ventas por día / sede / producto
-4. Generación de factura PDF
-5. Módulo de Promociones y Descuentos
+1. Historial de ventas extendido con filtros avanzados
+2. Anulación de ventas parcial/total con notas de crédito
+3. Reportes avanzados de rentabilidad y margen por producto
+4. Integración con facturación electrónica (DIAN)

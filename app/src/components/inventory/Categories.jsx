@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit2, Trash2, Tag, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { errorAlert, confirmDialog } from '../../utils/swal';
 
 const Categories = () => {
     const [categories, setCategories] = useState([]);
@@ -62,7 +63,7 @@ const Categories = () => {
                 fetchCategories();
             } else {
                 const data = await res.json();
-                alert(data.error || 'Error al guardar');
+                errorAlert(data.error || 'Error al guardar');
             }
         } catch (error) {
             console.error('Error saving category:', error);
@@ -70,22 +71,21 @@ const Categories = () => {
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('¿Estás seguro de eliminar esta categoría? Se verificará que no tenga productos asociados.')) {
-            try {
-                const token = localStorage.getItem('pos_token');
-                const res = await fetch(`${API_URL}/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.ok) {
-                    fetchCategories();
-                } else {
-                    const data = await res.json();
-                    alert(data.error || 'No se pudo eliminar la categoría');
-                }
-            } catch (error) {
-                console.error('Error deleting category:', error);
+        if (!(await confirmDialog('Se verificará que no tenga productos asociados.', '¿Eliminar categoría?', 'Sí, eliminar'))) return;
+        try {
+            const token = localStorage.getItem('pos_token');
+            const res = await fetch(`${API_URL}/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                fetchCategories();
+            } else {
+                const data = await res.json();
+                errorAlert(data.error || 'No se pudo eliminar la categoría');
             }
+        } catch (error) {
+            console.error('Error deleting category:', error);
         }
     };
 

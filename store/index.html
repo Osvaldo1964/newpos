@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tienda Online</title>
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Google Identity Services (OAuth) -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div id="app" class="app-layout">
+        <!-- Main Navbar -->
+        <header class="navbar">
+            <div class="nav-container">
+                <div class="brand">
+                    <img id="store-logo" src="" alt="Logo" class="hidden">
+                    <div>
+                        <h1 id="store-name">Cargando...</h1>
+                        <p id="store-slogan" class="text-sm text-muted"></p>
+                    </div>
+                </div>
+
+                <div class="nav-actions">
+                    <div id="user-menu" class="user-menu hidden">
+                        <span id="user-name-display" class="font-medium text-sm"></span>
+                        <button onclick="Store.logout()" class="btn-ghost" title="Cerrar sesión">
+                            <i data-lucide="log-out" class="icon-sm"></i>
+                        </button>
+                    </div>
+                    <button id="btn-login-nav" onclick="UI.showAuthModal()" class="btn-ghost">
+                        <i data-lucide="user"></i> <span class="hide-mobile">Iniciar Sesión</span>
+                    </button>
+                    <button class="btn-primary cart-btn" onclick="UI.toggleCart()">
+                        <i data-lucide="shopping-cart"></i>
+                        <span id="cart-badge" class="cart-badge">0</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Grid -->
+        <main class="main-content">
+            <!-- Sidebar / Categories -->
+            <aside class="sidebar">
+                <h3 class="font-heading mb-4 text-primary w-icon">
+                    <i data-lucide="list"></i> Categorías
+                </h3>
+                <div class="search-box">
+                    <i data-lucide="search" class="search-icon"></i>
+                    <input type="text" id="search-input" placeholder="Buscar productos..."
+                        oninput="Store.handleSearch(event)">
+                </div>
+                <nav id="category-list" class="category-nav">
+                    <!-- Loaded via JS -->
+                    <div class="skeleton-text"></div>
+                    <div class="skeleton-text w-75"></div>
+                    <div class="skeleton-text w-50"></div>
+                </nav>
+            </aside>
+
+            <!-- Product Grid -->
+            <section class="products-section">
+                <div class="section-header">
+                    <h2 id="current-category-title" class="font-heading text-xl">Todos los Productos</h2>
+                    <span id="product-count" class="text-sm text-muted">0 resultados</span>
+                </div>
+
+                <div id="products-grid" class="products-grid">
+                    <!-- Products loaded via JS -->
+                    <div class="product-skeleton"></div>
+                    <div class="product-skeleton"></div>
+                    <div class="product-skeleton"></div>
+                    <div class="product-skeleton"></div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Cart Drawer overlay and panel -->
+        <div id="cart-overlay" class="overlay hidden" onclick="UI.toggleCart(false)"></div>
+        <div id="cart-drawer" class="cart-drawer">
+            <div class="cart-header">
+                <h3 class="font-heading w-icon">
+                    <i data-lucide="shopping-bag"></i> Tu Carrito
+                </h3>
+                <button class="btn-close" onclick="UI.toggleCart(false)">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <div id="cart-items" class="cart-items">
+                <!-- Cart items -->
+                <div class="empty-cart">
+                    <i data-lucide="shopping-cart" class="text-muted" style="width:48px;height:48px;"></i>
+                    <p>Tu carrito está vacío</p>
+                </div>
+            </div>
+
+            <div class="cart-footer">
+                <div class="cart-summary border-b pb-2 mb-2">
+                    <div class="flex-between text-sm text-muted">
+                        <span>Subtotal</span>
+                        <span id="cart-subtotal">$0</span>
+                    </div>
+                </div>
+                <div class="flex-between font-bold text-lg text-primary mb-4">
+                    <span>Total</span>
+                    <span id="cart-total">$0</span>
+                </div>
+                <button class="btn-primary w-full shadow-lg" onclick="Store.proceedToCheckout()"
+                    style="padding: 1rem; font-size: 1.1rem;">
+                    Proceder al Pago
+                </button>
+            </div>
+        </div>
+
+        <!-- Product Detail Modal -->
+        <div id="product-modal" class="modal-wrapper hidden">
+            <div class="modal-overlay" onclick="UI.closeModal('product')"></div>
+            <div class="modal-content product-modal">
+                <button class="btn-close absolute top-4 right-4 z-10" onclick="UI.closeModal('product')">
+                    <i data-lucide="x"></i>
+                </button>
+                <div class="product-detail-grid">
+                    <div class="product-gallery bg-gray-50 flex-center relative">
+                        <img id="detail-img" src="" alt="Product" class="main-detail-img">
+                        <div id="detail-thumbnails" class="thumbnails-container"></div>
+                    </div>
+                    <div class="product-info-panel p-6">
+                        <div class="badge badge-primary mb-2" id="detail-cat">Categoría</div>
+                        <h2 id="detail-name" class="font-heading text-2xl mb-2 text-dark">Nombre</h2>
+                        <p id="detail-sku" class="text-xs text-muted font-mono mb-4">SKU001</p>
+
+                        <div class="text-3xl font-bold text-primary mb-6" id="detail-price">$0</div>
+
+                        <div class="prose text-sm text-gray-600 mb-6" id="detail-desc">
+                            Descripción
+                        </div>
+
+                        <div class="quantity-selector mb-6">
+                            <label class="font-medium text-sm mb-2 block">Cantidad</label>
+                            <div class="flex items-center gap-3">
+                                <button class="btn-qty" onclick="UI.updateDetailQty(-1)"><i
+                                        data-lucide="minus"></i></button>
+                                <input type="number" id="detail-qty" value="1" min="1" class="input-qty" readonly>
+                                <button class="btn-qty" onclick="UI.updateDetailQty(1)"><i
+                                        data-lucide="plus"></i></button>
+                            </div>
+                        </div>
+
+                        <button id="btn-add-detail"
+                            class="btn-primary w-full shadow-lg h-12 text-md w-icon justify-center">
+                            <i data-lucide="shopping-cart"></i> Agregar al Carrito
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Auth Modal -->
+        <div id="auth-modal" class="modal-wrapper hidden">
+            <div class="modal-overlay" onclick="UI.closeModal('auth')"></div>
+            <div class="modal-content auth-modal p-0 overflow-hidden">
+                <div class="grid-layout-2">
+                    <div class="bg-primary p-8 text-white flex-col-center text-center relative overflow-hidden">
+                        <div class="absolute inset-0 bg-pattern opacity-10"></div>
+                        <h2 class="font-heading text-3xl mb-4 relative z-10">Bienvenido</h2>
+                        <p class="opacity-80 relative z-10">Regístrate para continuar con tu compra y acceder a tus
+                            pedidos.</p>
+                        <i data-lucide="shopping-bag" class="mt-8 opacity-20 relative z-10"
+                            style="width:120px; height:120px;"></i>
+                    </div>
+
+                    <div class="p-8 relative">
+                        <button class="btn-close absolute top-4 right-4" onclick="UI.closeModal('auth')">
+                            <i data-lucide="x"></i>
+                        </button>
+
+                        <div id="auth-tabs" class="tabs mb-6">
+                            <button class="tab active" onclick="UI.setAuthTab('login')">Ingresar</button>
+                            <button class="tab" onclick="UI.setAuthTab('register')">Crear Cuenta</button>
+                        </div>
+
+                        <!-- Login Form -->
+                        <form id="login-form" onsubmit="Auth.handleLogin(event)">
+                            <div id="google-btn-container" class="mb-4 flex-center">
+                                <!-- Google Button automatically injected here if configured -->
+                            </div>
+
+                            <div class="divider mb-4"><span class="text-xs text-muted px-2 bg-white">O usa tu
+                                    email</span></div>
+
+                            <div class="input-group mb-4">
+                                <label class="input-label">Email</label>
+                                <input type="email" name="email" class="input-field" required>
+                            </div>
+                            <div class="input-group mb-6">
+                                <label class="input-label">Contraseña</label>
+                                <input type="password" name="password" class="input-field" required>
+                            </div>
+                            <button type="submit" class="btn-primary w-full justify-center">Ingresar</button>
+                        </form>
+
+                        <!-- Register Form -->
+                        <form id="register-form" class="hidden" onsubmit="Auth.handleRegister(event)">
+                            <div class="grid-layout-2 gap-4 mb-4">
+                                <div class="input-group">
+                                    <label class="input-label">Nombres</label>
+                                    <input type="text" name="nombre" class="input-field" required>
+                                </div>
+                                <div class="input-group">
+                                    <label class="input-label">Apellidos</label>
+                                    <input type="text" name="apellido" class="input-field" required>
+                                </div>
+                            </div>
+                            <div class="input-group mb-4">
+                                <label class="input-label">Email</label>
+                                <input type="email" name="email" class="input-field" required>
+                            </div>
+                            <div class="grid-layout-2 gap-4 mb-4">
+                                <div class="input-group">
+                                    <label class="input-label">Tipo Doc.</label>
+                                    <select name="tipo_documento" class="input-field">
+                                        <option value="CC">CC</option>
+                                        <option value="NIT">NIT</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label class="input-label">Documento *</label>
+                                    <input type="text" name="documento" class="input-field" required>
+                                </div>
+                            </div>
+                            <div class="input-group mb-4">
+                                <label class="input-label">Teléfono *</label>
+                                <input type="text" name="telefono" class="input-field" required>
+                            </div>
+                            <div class="input-group mb-4">
+                                <label class="input-label">Dirección (Facturación/Envío) *</label>
+                                <input type="text" name="direccion" class="input-field" required>
+                            </div>
+                            <div class="input-group mb-6">
+                                <label class="input-label">Contraseña</label>
+                                <input type="password" name="password" class="input-field" required minlength="6">
+                            </div>
+                            <button type="submit" class="btn-primary w-full justify-center">Crear Cuenta</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Checkout / Payment Modal -->
+        <div id="checkout-modal" class="modal-wrapper hidden">
+            <div class="modal-overlay" onclick="UI.closeModal('checkout')"></div>
+            <div class="modal-content checkout-modal p-0">
+                <div class="checkout-header p-6 border-b bg-gray-50 flex-between items-center rounded-t-xl">
+                    <h3 class="font-heading text-xl w-icon"><i data-lucide="credit-card"></i> Finalizar Compra</h3>
+                    <button class="btn-close" onclick="UI.closeModal('checkout')"><i data-lucide="x"></i></button>
+                </div>
+                <div class="p-6">
+                    <div class="bg-blue-50 text-blue-800 p-4 rounded-lg mb-6 text-sm flex gap-3">
+                        <i data-lucide="info" class="flex-shrink-0"></i>
+                        <div>
+                            <strong>Verifica tus datos de envío:</strong>
+                            <p id="checkout-user-address" class="mt-1 font-medium"></p>
+                            <p class="mt-1"><a href="#" onclick="UI.editProfile()"
+                                    class="underline text-blue-600">Editar datos</a> Si necesitas enviarlo a otra parte.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="input-group mb-6">
+                        <label class="input-label">Notas del pedido (opcional)</label>
+                        <textarea id="checkout-notes" class="input-field" rows="2"
+                            placeholder="Instrucciones especiales para la entrega..."></textarea>
+                    </div>
+
+                    <h4 class="font-medium text-sm mb-3">Total a Pagar</h4>
+                    <div class="text-3xl font-bold text-primary mb-6 checkout-total-display">$0</div>
+
+                    <h4 class="font-medium text-sm mb-3 text-muted">Selecciona tu método de pago seguro:</h4>
+
+                    <div id="payment-gateways" class="payment-grid">
+                        <!-- Botones de pago inyectados por JS según config -->
+                        <div class="text-center text-sm text-muted py-4 col-span-full">Cargando pasarelas...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="store-footer">
+            <div class="footer-content">
+                <p id="footer-text">&copy; 2026. Todos los derechos reservados.</p>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- Payment Gateway Libs -->
+    <script src="https://checkout.wompi.co/widget.js"></script>
+
+    <script src="app.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, ArrowRightLeft, Eye, XCircle, Warehouse, Package, Edit2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { infoAlert, errorAlert } from '../../utils/swal';
 
 const StockTransfers = () => {
     const [transfers, setTransfers] = useState([]);
@@ -84,7 +85,7 @@ const StockTransfers = () => {
 
         // Prevent adding same product twice in frontend list
         if (formData.items.some(i => i.product_id == newItem.product_id)) {
-            alert('Este producto ya está en la lista. Ajusta la cantidad directamente en la tabla.');
+            infoAlert('Este producto ya está en la lista. Ajusta la cantidad directamente en la tabla.', 'Duplicado');
             return;
         }
 
@@ -101,11 +102,11 @@ const StockTransfers = () => {
     const handleSave = async (e) => {
         e.preventDefault();
         if (formData.items.length === 0) {
-            alert('Debes agregar al menos un producto');
+            infoAlert('Debes agregar al menos un producto', 'Sin productos');
             return;
         }
         if (formData.from_warehouse_id === formData.to_warehouse_id) {
-            alert('La bodega de origen debe ser diferente a la bodega de destino');
+            infoAlert('La bodega de origen debe ser diferente a la bodega de destino', 'Bodegas iguales');
             return;
         }
 
@@ -136,7 +137,7 @@ const StockTransfers = () => {
                 fetchTransfers();
             } else {
                 const err = await res.json();
-                alert(err.error || 'Error al procesar el traslado');
+                errorAlert(err.error || 'Error al procesar el traslado');
             }
         } catch (error) {
             console.error('Error saving transfer:', error);

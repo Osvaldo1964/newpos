@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Banknote, LogIn, LogOut, ArrowUpCircle, ArrowDownCircle, Info, History, AlertCircle, CheckCircle, Monitor, Tag, Plus, Edit2, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatCurrency, formatDate, parseLocaleNumber } from '../../utils/formatters';
+import { infoAlert, confirmDialog } from '../../utils/swal';
 
 const CashManager = ({ mode, onSessionStarted, onSessionClosed }) => {
     const [user, setUser] = useState(JSON.parse(localStorage.getItem('pos_user') || '{}'));
@@ -200,7 +201,7 @@ const CashManager = ({ mode, onSessionStarted, onSessionClosed }) => {
                 }
             } else {
                 const data = await res.json();
-                alert(data.error);
+                infoAlert(data.error, 'Error al abrir la caja');
             }
         } catch (error) {
             console.error('Error opening cash:', error);
@@ -245,7 +246,7 @@ const CashManager = ({ mode, onSessionStarted, onSessionClosed }) => {
     };
 
     const handleDeleteMovement = async (id) => {
-        if (!window.confirm('¿Estás seguro de eliminar este movimiento?')) return;
+        if (!(await confirmDialog('¿Estás seguro de eliminar este movimiento?', '¿Eliminar movimiento?', 'Sí, eliminar'))) return;
         try {
             const token = localStorage.getItem('pos_token');
             const res = await fetch(`${API_CASH}/movements/${id}`, {
@@ -272,8 +273,8 @@ const CashManager = ({ mode, onSessionStarted, onSessionClosed }) => {
     };
 
     const handleCloseCash = async () => {
-        if (!closeMonto) return alert('Ingresa el monto de cierre');
-        if (!window.confirm('¿Estás seguro de cerrar la caja?')) return;
+        if (!closeMonto) return infoAlert('Ingresa el monto de cierre', 'Campo requerido');
+        if (!(await confirmDialog('¿Estás seguro de cerrar la caja?', 'Cerrar caja', 'Sí, cerrar'))) return;
 
         try {
             const token = localStorage.getItem('pos_token');

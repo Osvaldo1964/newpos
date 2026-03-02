@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit2, Trash2, User as UserIcon, Shield, MapPin, X, Key } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { errorAlert, confirmDialog } from '../../utils/swal';
 
 const Users = () => {
     const [users, setUsers] = useState([]);
@@ -96,7 +97,7 @@ const Users = () => {
                 fetchData();
             } else {
                 const data = await res.json();
-                alert(data.error || 'Error al guardar usuario');
+                errorAlert(data.error || 'Error al guardar usuario');
             }
         } catch (error) {
             console.error('Error saving user:', error);
@@ -104,22 +105,21 @@ const Users = () => {
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('¿Estás seguro de eliminar este usuario?')) {
-            try {
-                const token = localStorage.getItem('pos_token');
-                const res = await fetch(`${API_URL}/users/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.ok) {
-                    fetchData();
-                } else {
-                    const data = await res.json();
-                    alert(data.error || 'No se pudo eliminar el usuario');
-                }
-            } catch (error) {
-                console.error('Error deleting user:', error);
+        if (!(await confirmDialog('¿Estás seguro de eliminar este usuario?', '¿Eliminar usuario?', 'Sí, eliminar'))) return;
+        try {
+            const token = localStorage.getItem('pos_token');
+            const res = await fetch(`${API_URL}/users/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                fetchData();
+            } else {
+                const data = await res.json();
+                errorAlert(data.error || 'No se pudo eliminar el usuario');
             }
+        } catch (error) {
+            console.error('Error deleting user:', error);
         }
     };
 

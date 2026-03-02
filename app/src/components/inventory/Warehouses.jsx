@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit2, Trash2, Package, MapPin, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { errorAlert, confirmDialog } from '../../utils/swal';
 
 const Warehouses = () => {
     const [warehouses, setWarehouses] = useState([]);
@@ -80,7 +81,7 @@ const Warehouses = () => {
                 fetchData();
             } else {
                 const data = await res.json();
-                alert(data.error || 'Error al guardar');
+                errorAlert(data.error || 'Error al guardar');
             }
         } catch (error) {
             console.error('Error saving warehouse:', error);
@@ -88,22 +89,21 @@ const Warehouses = () => {
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('¿Estás seguro de eliminar esta bodega? Se verificará que esté vacía.')) {
-            try {
-                const token = localStorage.getItem('pos_token');
-                const res = await fetch(`${API_URL}/warehouses/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.ok) {
-                    fetchData();
-                } else {
-                    const data = await res.json();
-                    alert(data.error || 'No se pudo eliminar la bodega');
-                }
-            } catch (error) {
-                console.error('Error deleting warehouse:', error);
+        if (!(await confirmDialog('Se verificará que la bodega esté vacía.', '¿Eliminar bodega?', 'Sí, eliminar'))) return;
+        try {
+            const token = localStorage.getItem('pos_token');
+            const res = await fetch(`${API_URL}/warehouses/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                fetchData();
+            } else {
+                const data = await res.json();
+                errorAlert(data.error || 'No se pudo eliminar la bodega');
             }
+        } catch (error) {
+            console.error('Error deleting warehouse:', error);
         }
     };
 

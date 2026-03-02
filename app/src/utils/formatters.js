@@ -10,14 +10,14 @@
  */
 export const formatCurrency = (value) => {
     const amount = typeof value === 'string' ? parseFloat(value) : value;
-    if (isNaN(amount)) return '$ 0.00';
+    if (isNaN(amount)) return '$0.00';
 
     return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'USD', // We use USD format patterns (comma thousands, dot decimal) as requested
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
-    }).format(amount).replace('$', '$ ');
+    }).format(amount);
 };
 
 /**

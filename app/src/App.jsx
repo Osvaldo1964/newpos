@@ -16,9 +16,12 @@ import {
   Users as UsersIcon,
   Monitor,
   History,
-  FileText
+  FileText,
+  TrendingUp,
+  Boxes
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import Swal from 'sweetalert2'
 import './index.css'
 import Items from './components/inventory/Items'
 import Categories from './components/inventory/Categories'
@@ -36,6 +39,14 @@ import CashAudit from './components/cash/CashAudit'
 import SessionGuard from './components/cash/SessionGuard'
 import Terceros from './components/contacts/Terceros'
 import POS from './components/sales/POS'
+import Promotions from './components/sales/Promotions'
+import SalesByDay from './components/reports/SalesByDay'
+import SalesBySede from './components/reports/SalesBySede'
+import AdvancedReports from './components/reports/AdvancedReports'
+import PhysicalInventory from './components/reports/PhysicalInventory'
+import StoreSettings from './components/config/StoreSettings'
+import OnlineOrders from './components/sales/OnlineOrders'
+import { Store, Bell } from 'lucide-react'
 
 const modules = [
   {
@@ -82,12 +93,14 @@ const modules = [
   {
     id: 'reportes',
     title: 'Reportes',
-    description: 'Análisis de ventas por día y por sede.',
+    description: 'Ventas, análisis avanzado e inventario físico.',
     icon: <BarChart3 size={32} />,
     color: '#64748B',
     submodules: [
       { id: 'dia', title: 'Ventas por Día', icon: <BarChart3 size={20} /> },
-      { id: 'sede', title: 'Ventas por Sede', icon: <LayoutDashboard size={20} /> }
+      { id: 'sede', title: 'Ventas por Sede', icon: <LayoutDashboard size={20} /> },
+      { id: 'analisis', title: 'Análisis Avanzado', icon: <TrendingUp size={20} /> },
+      { id: 'inventario_fisico', title: 'Inventario Físico', icon: <Boxes size={20} /> },
     ]
   },
   {
@@ -108,6 +121,7 @@ const modules = [
     icon: <Settings size={32} />,
     color: '#1E3A8A',
     submodules: [
+      { id: 'store_config', title: 'Datos de la Tienda', icon: <Store size={20} /> },
       { id: 'usuarios', title: 'Usuarios', icon: <UsersIcon size={20} /> },
       { id: 'terceros', title: 'Terceros', icon: <UsersIcon size={20} /> },
       { id: 'permisos', title: 'Permisos', icon: <Shield size={20} /> },
@@ -126,13 +140,40 @@ function App() {
   const [activeModule, setActiveModule] = useState(null)
   const [activeSubmodule, setActiveSubmodule] = useState(null)
   const [activeSession, setActiveSession] = useState(null)
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(0)
 
   const API_CASH = 'http://localhost/newpos/api/public/cash'
+  const API_STORE = 'http://localhost/newpos/api/public'
 
   React.useEffect(() => {
     if (user) {
       fetchActiveSession();
+      fetchPendingOrders();
     }
+  }, [user]);
+
+  const fetchPendingOrders = async () => {
+    try {
+      const token = localStorage.getItem('pos_token');
+      if (!token) return;
+      const res = await fetch(`${API_STORE}/online-orders/pending-count`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPendingOrdersCount(data.count || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching pending orders count', error);
+    }
+  };
+
+  React.useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(() => {
+      fetchPendingOrders();
+    }, 30000); // Poll every 30 seconds
+    return () => clearInterval(interval);
   }, [user]);
 
   const fetchActiveSession = async () => {
@@ -172,7 +213,7 @@ function App() {
 
         if (payload.exp < now) {
           handleLogout();
-          alert('Tu sesión ha expirado por inactividad.');
+          Swal.fire({ icon: 'info', title: 'Sesión expirada', text: 'Tu sesión ha expirado por inactividad.', confirmButtonText: 'Iniciar sesión' });
         }
       } catch (e) {
         console.error('Error parsing token');
@@ -236,6 +277,8 @@ function App() {
         return <Terceros />
       case 'permisos':
         return <Permissions />
+      case 'store_config':
+        return <StoreSettings />
       case 'cajas_master':
         return <CashRegisters />
       case 'conceptos':
@@ -253,6 +296,18 @@ function App() {
         return <StockTransfers />
       case 'pos':
         return <POS />
+      case 'pedidos':
+        return <OnlineOrders />
+      case 'promociones':
+        return <Promotions />
+      case 'dia':
+        return <SalesByDay />
+      case 'sede':
+        return <SalesBySede />
+      case 'analisis':
+        return <AdvancedReports />
+      case 'inventario_fisico':
+        return <PhysicalInventory />
       default:
         return (
           <div className="cards-grid">
@@ -278,23 +333,41 @@ function App() {
   return (
     <div className="dashboard-container">
       <header className="header" style={{ position: 'relative' }}>
-        <div style={{ position: 'absolute', right: 0, top: 0, textAlign: 'right' }}>
-          <p style={{ fontWeight: 600, color: 'var(--primary)', marginBottom: '0.25rem' }}>{user.nombre}</p>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>{user.role}</p>
-          <button
-            onClick={handleLogout}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#B91C1C',
-              cursor: 'pointer',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              padding: 0
+        <div style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+
+          {/* Badge de Pedidos Online Recurrentes */}
+          <div
+            style={{ position: 'relative', cursor: 'pointer' }}
+            onClick={() => {
+              const eco = modules.find(m => m.id === 'ecommerce');
+              setActiveModule(eco);
+              setActiveSubmodule('pedidos');
             }}
+            title="Pedidos Online Pendientes"
           >
-            Cerrar Sesión
-          </button>
+            <Bell size={24} style={{ color: pendingOrdersCount > 0 ? '#10B981' : 'var(--text-muted)' }} />
+            {pendingOrdersCount > 0 && (
+              <span style={{
+                position: 'absolute', top: '-8px', right: '-8px',
+                background: '#EF4444', color: 'white', borderRadius: '50%',
+                width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '0.7rem', fontWeight: 'bold', border: '2px solid white'
+              }}>
+                {pendingOrdersCount}
+              </span>
+            )}
+          </div>
+
+          <div style={{ textAlign: 'right', borderLeft: '1px solid var(--border-color)', paddingLeft: '1.5rem' }}>
+            <p style={{ fontWeight: 600, color: 'var(--primary)', marginBottom: '0.25rem' }}>{user.nombre}</p>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>{user.role}</p>
+            <button
+              onClick={handleLogout}
+              style={{ background: 'none', border: 'none', color: '#B91C1C', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600, padding: 0 }}
+            >
+              Cerrar Sesión
+            </button>
+          </div>
         </div>
         <motion.h1
           initial={{ opacity: 0, y: -20 }}

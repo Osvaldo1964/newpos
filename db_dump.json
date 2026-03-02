@@ -1,0 +1,109 @@
+{
+    "online_orders": [
+        {
+            "id": 1,
+            "sale_id": 2,
+            "tercero_id": 2,
+            "customer_name": "MARIA SUAREZ",
+            "customer_email": "maria@google.com",
+            "customer_phone": "3023898254",
+            "customer_address": "URB SAN LORENZO MZ J CS 34",
+            "customer_documento": "665588",
+            "subtotal": "2950.00",
+            "iva_total": "560.50",
+            "total": "3510.50",
+            "metodo_pago": "",
+            "estado": "",
+            "referencia_pago": "",
+            "notas": "NINGUNA",
+            "created_at": "2026-03-02 11:54:21",
+            "updated_at": "2026-03-02 13:47:50"
+        }
+    ],
+    "sales": [
+        {
+            "id": 2,
+            "user_id": 1,
+            "tercero_id": 2,
+            "sede_id": 1,
+            "tipo": "POS",
+            "subtotal": "2950.00",
+            "iva_total": "560.50",
+            "total": "3510.50",
+            "estado": "PAGADA",
+            "created_at": "2026-03-02 12:13:45"
+        },
+        {
+            "id": 1,
+            "user_id": 2,
+            "tercero_id": 1,
+            "sede_id": 1,
+            "tipo": "POS",
+            "subtotal": "2950.00",
+            "iva_total": "560.50",
+            "total": "3510.50",
+            "estado": "PAGADA",
+            "created_at": "2026-02-27 13:36:47"
+        }
+    ],
+    "sale_items": [
+        {
+            "id": 4,
+            "sale_id": 2,
+            "product_id": 2,
+            "cantidad": "1.00",
+            "precio_unitario": "1450.00",
+            "promocion_id": null,
+            "descuento": "0.00",
+            "subtotal": "1450.00"
+        },
+        {
+            "id": 3,
+            "sale_id": 2,
+            "product_id": 1,
+            "cantidad": "1.00",
+            "precio_unitario": "1500.00",
+            "promocion_id": null,
+            "descuento": "0.00",
+            "subtotal": "1500.00"
+        },
+        {
+            "id": 2,
+            "sale_id": 1,
+            "product_id": 2,
+            "cantidad": "1.00",
+            "precio_unitario": "1450.00",
+            "promocion_id": null,
+            "descuento": "0.00",
+            "subtotal": "1450.00"
+        },
+        {
+            "id": 1,
+            "sale_id": 1,
+            "product_id": 1,
+            "cantidad": "1.00",
+            "precio_unitario": "1500.00",
+            "promocion_id": null,
+            "descuento": "0.00",
+            "subtotal": "1500.00"
+        }
+    ],
+    "sale_payments": [
+        {
+            "id": 2,
+            "sale_id": 2,
+            "metodo": "ONLINE",
+            "monto": "3510.50",
+            "referencia": "Pedido #1",
+            "created_at": "2026-03-02 12:13:45"
+        },
+        {
+            "id": 1,
+            "sale_id": 1,
+            "metodo": "EFECTIVO",
+            "monto": "4000.00",
+            "referencia": "",
+            "created_at": "2026-02-27 13:36:47"
+        }
+    ]
+}
