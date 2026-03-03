@@ -8,7 +8,7 @@ export default function StoreHeader() {
     useEffect(() => {
         const fetchConfig = async () => {
             try {
-                const res = await fetch(`${API}/store-info`);
+                const res = await fetch(`${API}/p/store-info`);
                 if (res.ok) {
                     const data = await res.json();
                     setConfig(data);

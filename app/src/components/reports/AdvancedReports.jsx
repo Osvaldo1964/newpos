@@ -139,13 +139,13 @@ export default function AdvancedReports() {
                     </div>
 
                     {/* Tabla */}
-                    <div className="table-container" style={{ margin: 0, maxHeight: 420, overflowY: 'auto' }}>
-                        <table className="data-table" style={{ margin: 0 }}>
+                    <div className="table-container" style={{ margin: 0, maxHeight: 420, overflowY: 'auto', overflowX: 'auto' }}>
+                        <table className="data-table" style={{ margin: 0, fontSize: '0.75rem', width: '100%', minWidth: '400px' }}>
                             <thead>
                                 <tr>
                                     <th>#</th>
                                     <th>Producto</th>
-                                    <th style={{ textAlign: 'center' }}>Unidades</th>
+                                    <th style={{ textAlign: 'center' }}>Uds.</th>
                                     <th style={{ textAlign: 'right' }}>Total</th>
                                 </tr>
                             </thead>

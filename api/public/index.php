@@ -1,6 +1,9 @@
 <?php
+
 use Psr\Http\Message\ResponseInterface as Response;
+
 date_default_timezone_set('America/Bogota');
+
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
 use App\Config\Database;
@@ -39,11 +42,15 @@ $app->addRoutingMiddleware();
 
 // Robust CORS Middleware
 $app->add(function (Request $request, $handler): Response {
-    $response = $handler->handle($request);
+    if ($request->getMethod() === 'OPTIONS') {
+        $response = new \Slim\Psr7\Response();
+    } else {
+        $response = $handler->handle($request);
+    }
     return $response
         ->withHeader('Access-Control-Allow-Origin', '*')
         ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
-        ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization');
+        ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization, Cache-Control, If-Modified-Since');
 });
 
 // Wildcard for preflight
@@ -207,6 +214,8 @@ $app->group('/reports', function ($group) {
     $controller = new ReportController($db);
     $group->get('/sales-by-day', [$controller, 'salesByDay']);
     $group->get('/sales-by-sede', [$controller, 'salesBySede']);
+    $group->get('/top-products', [$controller, 'topProducts']);
+    $group->get('/top-customers', [$controller, 'topCustomers']);
     $group->get('/physical-inventory', [$controller, 'physicalInventory']);
 })->add(new JwtMiddleware());
 
