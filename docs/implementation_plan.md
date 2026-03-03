@@ -71,12 +71,14 @@ _Última actualización: 2026-03-02_
 - **Integración con Ventas**: Conversión automática de pedidos a ventas POS al marcar como Pagado/Completado
 - **Branding en Reportes**: Logo y datos de la tienda integrados en todos los PDFs y reportes del sistema
 
-### 9. Reportes y Análisis 🆕 ✅
+### 9. Reportes y Optimización 🆕 ✅
 - **Ventas por Día**: Resumen de ingresos, facturas y desglose por método de pago.
 - **Ventas por Sede**: Agrupación geográfica con porcentajes de participación.
 - **Análisis Avanzado**: Top 10 productos más vendidos y Top clientes frecuentes.
-- **Inventario Físico**: Reporte de existencias por bodega para conteo manual.
+- **Inventario Físico**: Reporte de existencias por bodega para conteo manual, con conexión directa al API backend validando stock real vs contable, cálculo de valor de inventario y optimizado para impresión.
 - **Optimización Visual**: Diseño compacto/premium de KPI cards y tablas con scroll horizontal para pantallas pequeñas.
+- **Desglose de Bodegas**: Modal en UI de productos conectado al backend para ver stock preciso por bodega y prevenir ventas sin stock validando en transacción atómica (`Sale.php`).
+- **Sincronización de Branding**: Logo, Email, Dirección, Teléfono e información de la tienda inyectada y formateada unificadamente tanto en `StoreHeader` (Reportes Carta) como en el `SaleTicket` térmico (80mm) y panel de configuración de tienda (`StoreSettings`).
 
 ---
 

@@ -363,3 +363,50 @@ h4,
   .header { display: none; }
   body { background: white; }
 }
+
+/* ── SweetAlert2 Custom Theme ───────────────────────────────── */
+.swal-popup {
+  font-family: 'Inter', sans-serif !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.swal-btn-confirm {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.65rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.95rem;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  border: none;
+  background: var(--secondary);
+  color: white;
+  box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.35);
+  transition: all 0.2s ease;
+}
+
+.swal-btn-confirm:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.swal-btn-cancel {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.65rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.95rem;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  transition: all 0.2s ease;
+}
+
+.swal-btn-cancel:hover {
+  background: rgba(30, 58, 138, 0.06);
+}

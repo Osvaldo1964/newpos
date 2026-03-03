@@ -179,7 +179,7 @@ function App() {
   const fetchActiveSession = async () => {
     try {
       const token = localStorage.getItem('pos_token');
-      if (!token) return;
+      if (!token) return null;
 
       const res = await fetch(`${API_CASH}/active`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -187,17 +187,20 @@ function App() {
 
       if (res.status === 401) {
         handleLogout();
-        return;
+        return null;
       }
 
       if (res.ok) {
         const data = await res.json();
         setActiveSession(data);
+        return data;
       }
     } catch (error) {
       console.error('Error fetching active session:', error);
     }
+    return null;
   }
+
 
   // Token Expiration Checker
   React.useEffect(() => {

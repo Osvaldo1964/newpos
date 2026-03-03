@@ -200,4 +200,51 @@ class InventoryController
         $response->getBody()->write(json_encode($breakdown));
         return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
     }
+
+    public function getPhysicalInventoryReport(Request $request, Response $response)
+    {
+        $params = $request->getQueryParams();
+        $warehouseId = $params['warehouse_id'] ?? null;
+
+        $sql = "SELECT 
+                    w.nombre as bodega,
+                    p.sku,
+                    c.nombre as categoria,
+                    p.nombre as producto,
+                    i.stock_actual as stock_sistema,
+                    p.precio_base,
+                    (i.stock_actual * p.precio_base) as valor_inventario
+                FROM inventory i
+                JOIN products p ON i.product_id = p.id
+                LEFT JOIN categories c ON p.category_id = c.id
+                JOIN warehouses w ON i.warehouse_id = w.id
+                WHERE i.stock_actual > 0";
+
+        $execParams = [];
+        if ($warehouseId) {
+            $sql .= " AND i.warehouse_id = ?";
+            $execParams[] = $warehouseId;
+        }
+
+        $sql .= " ORDER BY w.nombre ASC, p.nombre ASC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($execParams);
+        $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Agrupar por bodega para el frontend
+        $grouped = [];
+        foreach ($results as $row) {
+            $bodega = $row['bodega'];
+            if (!isset($grouped[$bodega])) {
+                $grouped[$bodega] = [];
+            }
+            // Eliminar la bodega del item individual para ahorrar espacio, el frontend itera sobre agrupamiento
+            unset($row['bodega']);
+            $grouped[$bodega][] = $row;
+        }
+
+        $response->getBody()->write(json_encode($grouped));
+        return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
+    }
 }

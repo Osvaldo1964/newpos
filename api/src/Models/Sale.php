@@ -56,8 +56,14 @@ class Sale
                 $stmtCheck->execute([$item['product_id'], $warehouseId]);
                 $stock = $stmtCheck->fetchColumn();
 
-                if ($stock < $item['cantidad']) {
-                    throw new Exception("Stock insuficiente para el producto ID: " . $item['product_id']);
+                if ($stock === false || $stock < $item['cantidad']) {
+                    $stockDisponible = $stock !== false ? $stock : 0;
+                    // Fetch product name for better error
+                    $pNameStmt = $this->db->prepare("SELECT nombre FROM products WHERE id = ?");
+                    $pNameStmt->execute([$item['product_id']]);
+                    $pName = $pNameStmt->fetchColumn() ?: "ID " . $item['product_id'];
+
+                    throw new Exception("Stock insuficiente para '{$pName}' en la bodega seleccionada. Disponible: {$stockDisponible}, Solicitado: {$item['cantidad']}");
                 }
 
                 $sqlUpdateStock = "UPDATE inventory SET stock_actual = stock_actual - ? 

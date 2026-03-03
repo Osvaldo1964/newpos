@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Lock, AlertCircle, LogIn, LogOut, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CashManager from './CashManager';
@@ -16,23 +16,27 @@ import { formatDate } from '../../utils/formatters';
 const SessionGuard = ({ user, activeSession, onSessionStatusChange, children }) => {
     const [status, setStatus] = useState('CHECKING'); // CHECKING, LOCKED_OPEN, LOCKED_CLOSE, OK
     const [loading, setLoading] = useState(true);
+    const isManualRefresh = useRef(false); // Prevent double-fire from useEffect during manual refresh
 
     const isCashier = user?.role_id === 3;
 
     useEffect(() => {
+        // Skip if handleSuccess is managing the refresh manually
+        if (isManualRefresh.current) return;
+
         if (!isCashier) {
             setStatus('OK');
             setLoading(false);
             return;
         }
 
-        checkSessionIntegrity();
+        checkSessionIntegrity(activeSession);
     }, [activeSession, user]);
 
-    const checkSessionIntegrity = () => {
+    const checkSessionIntegrity = (sessionData) => {
         setLoading(true);
 
-        if (!activeSession) {
+        if (!sessionData) {
             setStatus('LOCKED_OPEN');
             setLoading(false);
             return;
@@ -40,7 +44,7 @@ const SessionGuard = ({ user, activeSession, onSessionStatusChange, children }) 
 
         // Check date
         const today = new Date().toISOString().split('T')[0];
-        const sessionDate = new Date(activeSession.fecha_apertura).toISOString().split('T')[0];
+        const sessionDate = new Date(sessionData.fecha_apertura).toISOString().split('T')[0];
 
         if (sessionDate !== today) {
             setStatus('LOCKED_CLOSE');
@@ -50,12 +54,15 @@ const SessionGuard = ({ user, activeSession, onSessionStatusChange, children }) 
         setLoading(false);
     };
 
-    const handleSuccess = () => {
-        // Show loading while parent re-fetches the session.
-        // DO NOT set status to 'OK' here — let checkSessionIntegrity() decide
-        // the correct next state (LOCKED_OPEN for new-day opening, or OK if already open).
+    const handleSuccess = async () => {
+        // Prevent useEffect from interfering while we do the manual refresh
+        isManualRefresh.current = true;
         setLoading(true);
-        onSessionStatusChange(); // Trigger re-fetch in parent (App.jsx)
+        // Await the parent re-fetch. onSessionStatusChange now returns the
+        // fresh session data so we can validate without relying on stale props.
+        const freshSession = await onSessionStatusChange();
+        isManualRefresh.current = false;
+        checkSessionIntegrity(freshSession);
     };
 
     if (loading || status === 'CHECKING') {

@@ -98,10 +98,14 @@ $app->group('/inventory', function ($group) {
     $group->post('/products', [$controller, 'createProduct']);
     $group->put('/products/{id}', [$controller, 'updateProduct']);
     $group->delete('/products/{id}', [$controller, 'deleteProduct']);
+    $group->get('/products/{id}/stock', [$controller, 'getProductStockBreakdown']);
+    $group->get('/reports/physical-inventory', [$controller, 'getPhysicalInventoryReport']);
     $group->get('/categories', [$controller, 'getCategories']);
+
     $group->get('/warehouses', [$controller, 'getWarehouses']);
     $group->get('/sedes', [$controller, 'getSedes']);
 })->add(new JwtMiddleware());
+
 
 $app->group('/categories', function ($group) {
     $db = (new Database())->getConnection();
@@ -172,6 +176,8 @@ $app->group('/cash', function ($group) {
     $group->put('/close/{id}', [$controller, 'closeSession']);
     $group->get('/session/{id}', [$controller, 'getSessionDetails']);
     $group->post('/movements', [$controller, 'addMovement']);
+    $group->put('/movements/{id}', [$controller, 'updateMovement']);
+    $group->delete('/movements/{id}', [$controller, 'deleteMovement']);
     $group->get('/audit', [$controller, 'getAuditLogs']);
 })->add(new JwtMiddleware());
 

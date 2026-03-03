@@ -49,14 +49,16 @@ export default function PhysicalInventory() {
         w.document.write(`
             <html><head><title>Inventario Físico</title>
             <style>
-                body { font-family: Arial, sans-serif; font-size: 12px; }
+                html, body { font-family: Arial, sans-serif; font-size: 10px !important; }
                 table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-                th { background: #1E3A8A; color: white; padding: 6px 8px; text-align: left; }
-                td { border-bottom: 1px solid #eee; padding: 5px 8px; }
-                h2 { color: #1E3A8A; margin-top: 20px; }
+                th { background: #1E3A8A !important; color: white !important; padding: 4px 6px; text-align: left; font-size: 10px !important; }
+                td { border-bottom: 1px solid #eee; padding: 4px 6px; font-size: 10px !important; }
+                h2, h3 { color: #1E3A8A; margin-top: 15px; font-size: 14px !important; }
+                span, div { font-size: 10px !important; }
                 .text-right { text-align: right; }
                 .tfoot-row { font-weight: bold; background: #f0f4ff; }
                 .count-col { background: #FFF9C4; border: 2px dashed #F59E0B; min-width: 80px; }
+                * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                 @media print { button { display: none; } }
             </style></head><body>
             ${printContent.innerHTML}

@@ -34,10 +34,10 @@ export default function StoreHeader() {
         }}>
             {config.logo_url && (
                 <img
-                    src={config.logo_url}
+                    src={config.logo_url.startsWith('http') ? config.logo_url : `http://localhost${config.logo_url}`}
                     alt="Logo"
                     style={{
-                        maxHeight: '80px',
+                        maxHeight: '60px',
                         maxWidth: '200px',
                         objectFit: 'contain'
                     }}
@@ -50,6 +50,7 @@ export default function StoreHeader() {
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '0.25rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                     {config.nit && <span><strong>NIT:</strong> {config.nit}</span>}
                     {config.telefono && <span><strong>Tel:</strong> {config.telefono}</span>}
+                    {config.email && <span><strong>Email:</strong> {config.email}</span>}
                     {config.direccion && <span><strong>Dir:</strong> {config.direccion} {config.ciudad && `- ${config.ciudad}`}</span>}
                 </div>
             </div>

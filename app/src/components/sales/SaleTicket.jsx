@@ -1,7 +1,9 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Printer, X, Download } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatCurrency } from '../../utils/formatters';
+
+const API = 'http://localhost/newpos/api/public';
 
 const METODO_LABEL = {
     EFECTIVO: 'Efectivo',
@@ -16,6 +18,23 @@ const SaleTicket = ({ saleData, onClose }) => {
         saleId, fecha, cajero, customer,
         warehouse, items, subtotal, ivaTotal, total, payments, cambio
     } = saleData;
+
+    const [config, setConfig] = useState(null);
+
+    useEffect(() => {
+        const fetchConfig = async () => {
+            try {
+                const res = await fetch(`${API}/p/store-info`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setConfig(data);
+                }
+            } catch (error) {
+                console.error("Failed to load store config for ticket", error);
+            }
+        };
+        fetchConfig();
+    }, []);
 
     const handlePrint = () => {
         const printContents = ticketRef.current.innerHTML;
@@ -78,8 +97,24 @@ const SaleTicket = ({ saleData, onClose }) => {
 
                         {/* Encabezado */}
                         <div className="center" style={{ textAlign: 'center', marginBottom: '8px' }}>
-                            <div className="logo bold" style={{ fontSize: '22px', fontWeight: 900, letterSpacing: '3px' }}>NewPOS</div>
-                            <div style={{ fontSize: '11px', marginTop: '2px' }}>Sistema Punto de Venta</div>
+                            {config?.logo_url && (
+                                <img
+                                    src={config.logo_url.startsWith('http') ? config.logo_url : `http://localhost${config.logo_url}`}
+                                    alt="Logo"
+                                    style={{ maxHeight: '60px', maxWidth: '100%', objectFit: 'contain', marginBottom: '4px' }}
+                                />
+                            )}
+                            <div className="logo bold" style={{ fontSize: '18px', fontWeight: 900, textTransform: 'uppercase' }}>
+                                {config?.nombre || 'NewPOS'}
+                            </div>
+                            {config?.slogan && <div style={{ fontSize: '11px', fontStyle: 'italic' }}>{config.slogan}</div>}
+
+                            <div style={{ fontSize: '11px', marginTop: '4px', lineHeight: 1.3 }}>
+                                {config?.nit && <div>NIT: {config.nit}</div>}
+                                {config?.direccion && <div>{config.direccion} {config?.ciudad ? `- ${config.ciudad}` : ''}</div>}
+                                {config?.telefono && <div>Tel: {config.telefono}</div>}
+                                {config?.email && <div>{config.email}</div>}
+                            </div>
                         </div>
 
                         <div className="separator" style={{ borderTop: '1px dashed #888', margin: '8px 0' }} />

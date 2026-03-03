@@ -213,7 +213,7 @@ export default function StoreSettings() {
                             overflow: 'hidden', backgroundColor: '#F8FAFC', padding: '1rem'
                         }}>
                             {config.logo_url ? (
-                                <img src={config.logo_url} alt="Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                                <img src={config.logo_url.startsWith('http') ? config.logo_url : `http://localhost${config.logo_url}`} alt="Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
                             ) : (
                                 <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Sin logo</span>
                             )}

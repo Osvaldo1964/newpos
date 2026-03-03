@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 03-03-2026 a las 01:40:00
+-- Tiempo de generación: 03-03-2026 a las 14:56:19
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -84,16 +84,17 @@ CREATE TABLE `cash_registers` (
   `nombre` varchar(100) NOT NULL,
   `sede_id` int(11) DEFAULT NULL,
   `estado` enum('ACTIVA','INACTIVA') DEFAULT 'ACTIVA',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `active_session_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `cash_registers`
 --
 
-INSERT INTO `cash_registers` (`id`, `nombre`, `sede_id`, `estado`, `created_at`) VALUES
-(1, 'Caja Principal', 1, 'ACTIVA', '2026-02-26 18:27:46'),
-(2, 'Caja Norte 01', 2, 'ACTIVA', '2026-02-26 18:27:57');
+INSERT INTO `cash_registers` (`id`, `nombre`, `sede_id`, `estado`, `created_at`, `active_session_id`) VALUES
+(1, 'Caja Principal', 1, 'ACTIVA', '2026-02-26 18:27:46', 4),
+(2, 'Caja Norte 01', 2, 'ACTIVA', '2026-02-26 18:27:57', NULL);
 
 -- --------------------------------------------------------
 
@@ -119,7 +120,9 @@ CREATE TABLE `cash_sessions` (
 
 INSERT INTO `cash_sessions` (`id`, `user_id`, `sede_id`, `register_id`, `monto_apertura`, `monto_cierre`, `estado`, `fecha_apertura`, `fecha_cierre`) VALUES
 (1, 2, 1, 1, 5000.00, 4000.00, 'CERRADA', '2026-02-27 13:15:43', '2026-03-02 12:19:25'),
-(2, 2, 1, 1, 10000.00, NULL, 'ABIERTA', '2026-03-02 12:23:51', NULL);
+(2, 2, 1, 1, 10000.00, 100.00, 'CERRADA', '2026-03-02 12:23:51', '2026-03-03 12:45:16'),
+(3, 1, 1, 1, 50.00, 100.00, 'CERRADA', '2026-03-03 12:54:55', '2026-03-03 12:56:38'),
+(4, 2, 1, 1, 15000.00, NULL, 'ABIERTA', '2026-03-03 12:59:28', NULL);
 
 -- --------------------------------------------------------
 
@@ -254,7 +257,7 @@ CREATE TABLE `inventory` (
 INSERT INTO `inventory` (`product_id`, `warehouse_id`, `stock_actual`, `last_update`) VALUES
 (1, 1, 88.00, '2026-03-02 17:13:45'),
 (1, 2, 10.00, '2026-02-27 16:31:26'),
-(2, 1, 38.00, '2026-03-02 17:13:45');
+(2, 1, 36.00, '2026-03-03 13:14:16');
 
 -- --------------------------------------------------------
 
@@ -287,7 +290,8 @@ INSERT INTO `inventory_movements` (`id`, `tipo`, `product_id`, `from_warehouse_i
 (6, 'VENTA', 1, 1, NULL, 1.00, 2, 'Venta POS #1', '2026-02-27 18:36:47'),
 (7, 'VENTA', 2, 1, NULL, 1.00, 2, 'Venta POS #1', '2026-02-27 18:36:47'),
 (8, 'VENTA', 1, 1, NULL, 1.00, 1, 'Venta POS #2', '2026-03-02 17:13:45'),
-(9, 'VENTA', 2, 1, NULL, 1.00, 1, 'Venta POS #2', '2026-03-02 17:13:45');
+(9, 'VENTA', 2, 1, NULL, 1.00, 1, 'Venta POS #2', '2026-03-02 17:13:45'),
+(10, 'VENTA', 2, 1, NULL, 2.00, 2, 'Venta POS #7', '2026-03-03 13:14:16');
 
 -- --------------------------------------------------------
 
@@ -571,7 +575,8 @@ CREATE TABLE `sales` (
 
 INSERT INTO `sales` (`id`, `user_id`, `tercero_id`, `sede_id`, `tipo`, `subtotal`, `iva_total`, `total`, `estado`, `created_at`) VALUES
 (1, 2, 1, 1, 'POS', 2950.00, 560.50, 3510.50, 'PAGADA', '2026-02-27 18:36:47'),
-(2, 1, 2, 1, 'POS', 2950.00, 560.50, 3510.50, 'PAGADA', '2026-03-02 17:13:45');
+(2, 1, 2, 1, 'POS', 2950.00, 560.50, 3510.50, 'PAGADA', '2026-03-02 17:13:45'),
+(7, 2, 1, 2, 'POS', 2610.00, 495.90, 3105.90, 'PAGADA', '2026-03-03 13:14:16');
 
 -- --------------------------------------------------------
 
@@ -598,7 +603,8 @@ INSERT INTO `sale_items` (`id`, `sale_id`, `product_id`, `cantidad`, `precio_uni
 (1, 1, 1, 1.00, 1500.00, NULL, 0.00, 1500.00),
 (2, 1, 2, 1.00, 1450.00, NULL, 0.00, 1450.00),
 (3, 2, 1, 1.00, 1500.00, NULL, 0.00, 1500.00),
-(4, 2, 2, 1.00, 1450.00, NULL, 0.00, 1450.00);
+(4, 2, 2, 1.00, 1450.00, NULL, 0.00, 1450.00),
+(9, 7, 2, 2.00, 1450.00, NULL, 290.00, 2610.00);
 
 -- --------------------------------------------------------
 
@@ -621,7 +627,8 @@ CREATE TABLE `sale_payments` (
 
 INSERT INTO `sale_payments` (`id`, `sale_id`, `metodo`, `monto`, `referencia`, `created_at`) VALUES
 (1, 1, 'EFECTIVO', 4000.00, '', '2026-02-27 18:36:47'),
-(2, 2, 'ONLINE', 3510.50, 'Pedido #1', '2026-03-02 17:13:45');
+(2, 2, 'ONLINE', 3510.50, 'Pedido #1', '2026-03-02 17:13:45'),
+(3, 7, 'EFECTIVO', 3105.90, '', '2026-03-03 13:14:16');
 
 -- --------------------------------------------------------
 
@@ -719,7 +726,7 @@ CREATE TABLE `store_config` (
 --
 
 INSERT INTO `store_config` (`id`, `nombre`, `slogan`, `logo_url`, `direccion`, `telefono`, `email`, `nit`, `ciudad`, `google_client_id`, `wompi_public_key`, `payu_merchant_id`, `payu_account_id`, `payu_api_key`, `payu_test`, `mercadopago_public_key`, `updated_at`) VALUES
-(1, 'Electro Tienda', 'Tu tecnologÝa al alcance', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, '2026-03-02 16:07:23');
+(1, 'Electro Tienda', 'Tu tecnología al alcance', '/newpos/api/public/uploads/store/logo.jpg?t=1772544202', 'URB SAN LORENZO MZ J CS 34', '3023898254', 'osvicor@hotmail.com', '996688', 'SANTA MARTA', NULL, NULL, NULL, NULL, NULL, 1, NULL, '2026-03-03 13:23:28');
 
 -- --------------------------------------------------------
 
@@ -1067,7 +1074,7 @@ ALTER TABLE `cash_registers`
 -- AUTO_INCREMENT de la tabla `cash_sessions`
 --
 ALTER TABLE `cash_sessions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `categories`
@@ -1103,7 +1110,7 @@ ALTER TABLE `compras_ordenes_detalles`
 -- AUTO_INCREMENT de la tabla `inventory_movements`
 --
 ALTER TABLE `inventory_movements`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT de la tabla `modules`
@@ -1163,19 +1170,19 @@ ALTER TABLE `roles`
 -- AUTO_INCREMENT de la tabla `sales`
 --
 ALTER TABLE `sales`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT de la tabla `sale_items`
 --
 ALTER TABLE `sale_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT de la tabla `sale_payments`
 --
 ALTER TABLE `sale_payments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de la tabla `sedes`

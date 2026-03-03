@@ -48,13 +48,16 @@ _Última actualización: 2026-03-02_
 - [x] Refinamiento de Modales (React Portals) para mejor visualización
 - [x] Fallback de estados y normalización de 'PENDIENTE' para visualización de botones
 
-## Fase 9 — Reportes y Optimización ✅ (completada 2026-03-02)
+## Fase 9 — Reportes y Optimización ✅ (completada 2026-03-03)
 - [x] Corrección de URLs malformadas en reportes dinámicos
 - [x] Implementación de rutas de API para reportes de Top Productos/Clientes
 - [x] Optimización visual de KPI cards y tablas (estilo compacto/premium)
 - [x] Soporte para scroll horizontal en tablas extensas
-- [x] Middleware de CORS robusto para manejo de preflight (OPTIONS)
-- [x] Sincronización de Logo en cabeceras de reportes
+- [x] Sincronización de Logo e Información en cabeceras de reportes (`StoreHeader`) y tickets (`SaleTicket`)
+- [x] Integración de API para Reporte de Inventario Físico agrupado por Bodega con valores monetarios
+- [x] Refinamiento estricto de estilos de impresión en Inventario Físico (fuente 10px unificada)
+- [x] Implementación y corrección de API para Desglose de Stock por Bodega (`/inventory/products/{id}/stock`)
+- [x] Ajuste crítico en validación de transacciones de caja (`Sale.php`) bloqueando ventas sin stock en la bodega seleccionada
 
 ## Fase 10 — Próximos Pasos (Hoja de Ruta)
 - [ ] Historial de ventas avanzado con filtros de fecha
