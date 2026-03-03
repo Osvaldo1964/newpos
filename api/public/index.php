@@ -52,7 +52,11 @@ $app->options('/{routes:.+}', function ($request, $response) {
 });
 
 // 1. Auth Pública y Login Admin (Rutas sin Middleware JWT)
-$app->post('/login', [AuthController::class, 'login']);
+$app->post('/login', function (Request $request, Response $response) {
+    $db = (new Database())->getConnection();
+    $controller = new AuthController($db);
+    return $controller->login($request, $response);
+});
 
 $app->get('/status', function (Request $request, Response $response) {
     $response->getBody()->write(json_encode(['status' => 'online', 'message' => 'POS API is running']));
