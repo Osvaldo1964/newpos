@@ -8,7 +8,7 @@ _Última actualización: 2026-03-02_
 | Backend API | PHP 8 + Slim Framework 4 (REST) |
 | Frontend SPA | React 18 + Vite + Framer Motion |
 | Base de Datos | MySQL 8 (InnoDB, transacciones) |
-| Seguridad | JWT (JSON Web Tokens) + Middleware |
+| Seguridad | JWT (JSON Web Tokens) + Robusto Middleware CORS |
 | Permisos | RBAC granular por módulo y acción |
 
 ## Identidad Visual
@@ -53,10 +53,11 @@ _Última actualización: 2026-03-02_
 
 ### 6. Caja ✅
 - Apertura y Cierre de sesiones con arqueo
-- Conceptos de caja con paginación y búsqueda
-- Movimientos manuales (Ingresos / Gastos)
-- Auditoría en tiempo real (Admin / Supervisor)
+- **Conceptos de caja** con paginación y búsqueda
+- **Movimientos manuales** (Ingresos / Gastos)
+- **Auditoría en tiempo real** (Admin / Supervisor)
 - Columna `metodo_pago` en `cash_movements`
+- **Gestión de Sedes y Cajas** vinculada a la configuración global de la tienda
 
 ### 7. Ventas POS ✅
 - Transacción atómica: cabecera + ítems + descuento de inventario + movimientos + pagos + caja
@@ -69,6 +70,13 @@ _Última actualización: 2026-03-02_
 - **Gestión de Pedidos**: Panel administrativo con seguimiento de estados y notificaciones en tiempo real
 - **Integración con Ventas**: Conversión automática de pedidos a ventas POS al marcar como Pagado/Completado
 - **Branding en Reportes**: Logo y datos de la tienda integrados en todos los PDFs y reportes del sistema
+
+### 9. Reportes y Análisis 🆕 ✅
+- **Ventas por Día**: Resumen de ingresos, facturas y desglose por método de pago.
+- **Ventas por Sede**: Agrupación geográfica con porcentajes de participación.
+- **Análisis Avanzado**: Top 10 productos más vendidos y Top clientes frecuentes.
+- **Inventario Físico**: Reporte de existencias por bodega para conteo manual.
+- **Optimización Visual**: Diseño compacto/premium de KPI cards y tablas con scroll horizontal para pantallas pequeñas.
 
 ---
 

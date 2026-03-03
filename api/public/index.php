@@ -1,6 +1,9 @@
 <?php
+
 use Psr\Http\Message\ResponseInterface as Response;
+
 date_default_timezone_set('America/Bogota');
+
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
 use App\Config\Database;
@@ -39,11 +42,15 @@ $app->addRoutingMiddleware();
 
 // Robust CORS Middleware
 $app->add(function (Request $request, $handler): Response {
-    $response = $handler->handle($request);
+    if ($request->getMethod() === 'OPTIONS') {
+        $response = new \Slim\Psr7\Response();
+    } else {
+        $response = $handler->handle($request);
+    }
     return $response
         ->withHeader('Access-Control-Allow-Origin', '*')
         ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
-        ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization');
+        ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization, Cache-Control, If-Modified-Since');
 });
 
 // Wildcard for preflight
@@ -52,7 +59,11 @@ $app->options('/{routes:.+}', function ($request, $response) {
 });
 
 // 1. Auth Pública y Login Admin (Rutas sin Middleware JWT)
-$app->post('/login', [AuthController::class, 'login']);
+$app->post('/login', function (Request $request, Response $response) {
+    $db = (new Database())->getConnection();
+    $controller = new AuthController($db);
+    return $controller->login($request, $response);
+});
 
 $app->get('/status', function (Request $request, Response $response) {
     $response->getBody()->write(json_encode(['status' => 'online', 'message' => 'POS API is running']));
@@ -203,6 +214,8 @@ $app->group('/reports', function ($group) {
     $controller = new ReportController($db);
     $group->get('/sales-by-day', [$controller, 'salesByDay']);
     $group->get('/sales-by-sede', [$controller, 'salesBySede']);
+    $group->get('/top-products', [$controller, 'topProducts']);
+    $group->get('/top-customers', [$controller, 'topCustomers']);
     $group->get('/physical-inventory', [$controller, 'physicalInventory']);
 })->add(new JwtMiddleware());
 

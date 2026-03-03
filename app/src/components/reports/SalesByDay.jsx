@@ -37,7 +37,7 @@ export default function SalesByDay() {
     const handlePrint = () => window.print();
 
     const paymentMethods = ['efectivo', 'tarjeta', 'transferencia', 'nequi'];
-    const methodLabels = { efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia', nequi: 'Nequi' };
+    const methodLabels = { efectivo: 'Efect.', tarjeta: 'Tarj.', transferencia: 'Transf.', nequi: 'Nequi' };
     const methodColors = { efectivo: '#10B981', tarjeta: '#3B82F6', transferencia: '#8B5CF6', nequi: '#F59E0B' };
 
     return (
@@ -69,7 +69,7 @@ export default function SalesByDay() {
 
             {/* KPIs */}
             {totals && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.75rem', marginBottom: '2rem' }}>
                     {[
                         { label: 'Total Ventas', value: formatCurrency(totals.total), icon: <DollarSign size={18} />, color: '#1E3A8A' },
                         { label: 'N° Facturas', value: totals.num_ventas, icon: <ShoppingCart size={18} />, color: '#10B981' },
@@ -78,11 +78,11 @@ export default function SalesByDay() {
                         { label: 'Tarjeta', value: formatCurrency(totals.tarjeta), icon: <CreditCard size={18} />, color: '#3B82F6' },
                         { label: 'Transferencia', value: formatCurrency(totals.transferencia), icon: <ArrowUpDown size={18} />, color: '#8B5CF6' },
                     ].map(kpi => (
-                        <div key={kpi.label} className="card" style={{ padding: '1.25rem', borderLeft: `4px solid ${kpi.color}`, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <div style={{ padding: '0.5rem', borderRadius: '10px', background: `${kpi.color}15`, color: kpi.color }}>{kpi.icon}</div>
+                        <div key={kpi.label} className="card" style={{ padding: '0.75rem 1rem', borderLeft: `3px solid ${kpi.color}`, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div style={{ padding: '0.4rem', borderRadius: '8px', background: `${kpi.color}15`, color: kpi.color }}>{kpi.icon}</div>
                             <div>
-                                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>{kpi.label}</p>
-                                <p style={{ fontSize: '0.95rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{kpi.value}</p>
+                                <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 500, textTransform: 'uppercase' }}>{kpi.label}</p>
+                                <p style={{ fontSize: '0.85rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{kpi.value}</p>
                             </div>
                         </div>
                     ))}
@@ -90,8 +90,8 @@ export default function SalesByDay() {
             )}
 
             {/* Tabla */}
-            <div className="table-container">
-                <table className="data-table" style={{ fontSize: '0.82rem' }}>
+            <div className="table-container" style={{ overflowX: 'auto' }}>
+                <table className="data-table" style={{ fontSize: '0.75rem', width: '100%', minWidth: '800px' }}>
                     <thead>
                         <tr>
                             <th>Fecha</th>
@@ -134,7 +134,7 @@ export default function SalesByDay() {
                     </tbody>
                     {totals && rows.length > 0 && (
                         <tfoot>
-                            <tr style={{ fontWeight: 700, background: '#2563EB', color: 'white', fontSize: '0.82rem' }}>
+                            <tr style={{ fontWeight: 700, background: '#2563EB', color: 'white', fontSize: '0.75rem' }}>
                                 <td>TOTAL PERÍODO</td>
                                 <td style={{ textAlign: 'center' }}>{totals.num_ventas}</td>
                                 <td style={{ textAlign: 'right' }}>{formatCurrency(totals.subtotal)}</td>
